@@ -1,0 +1,404 @@
+html,
+body {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(135deg, #fff5f7 0%, #f0f4ff 50%, #fff0f5 100%);
+  color: #333;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+.container {
+  height: 100vh;
+  width: 100vw;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  visibility: hidden;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Centering all slides vertically and horizontally */
+.container>div {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0 auto;
+  width: 90%;
+  max-width: 650px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* Section specific positioning adjustments */
+.container div.six {
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.container div.seven,
+.container div.eight {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  transform: none;
+  pointer-events: none;
+}
+
+/* Section One */
+.one {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  margin: 0 0 10px;
+  font-weight: 400;
+}
+
+.one>img {
+  vertical-align: middle;
+  margin-bottom: 10px;
+  max-width: 100%;
+  height: auto;
+}
+
+.two {
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  font-weight: 300;
+  color: #666;
+  margin: 5px 0 0;
+}
+
+/* Section Three */
+.three {
+  font-size: clamp(1.8rem, 4.5vw, 3rem);
+  font-weight: 300;
+}
+
+/* Section Four - Chatbox */
+.four {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.four .text-box {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  border: 2px solid rgba(21, 161, 237, 0.4);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 14px;
+  padding: 18px 90px 18px 20px;
+  /* 90px right padding reserves dedicated space for Send button */
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  min-height: 80px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.text-box p.hbd-chatbox {
+  margin: 0;
+  text-align: left;
+  font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+  line-height: 1.5;
+  color: #333;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.hbd-chatbox span {
+  display: inline;
+  visibility: hidden;
+}
+
+.text-box .fake-btn {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  color: #fff;
+  background-color: #15a1ed;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 3px 10px rgba(21, 161, 237, 0.4);
+  margin: 0;
+}
+
+/* Section Five - Ideas */
+.five p {
+  font-size: clamp(1.3rem, 3.5vw, 2rem);
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.idea-3 strong {
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-block;
+  background-color: #15a1ed;
+  color: #fff;
+}
+
+.five .idea-5 {
+  font-size: clamp(2rem, 5.5vw, 3.8rem);
+}
+
+.idea-5 span,
+.idea-6 span,
+.wish-hbd span {
+  display: inline-block;
+}
+
+.idea-6 span {
+  font-size: clamp(5rem, 18vw, 13rem);
+  font-weight: 700;
+  color: #ff4081;
+  text-shadow: 0 10px 20px rgba(255, 64, 129, 0.2);
+}
+
+/* Section Six - Photo, Hat & Wish */
+.six {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dp-container {
+  position: relative;
+  display: inline-block;
+  margin: 0 auto 15px;
+  width: fit-content;
+}
+
+/* Bigger Profile Circle Image */
+.weegen-dp {
+  width: 230px;
+  height: 230px;
+  max-width: 65vw;
+  max-height: 38vh;
+  object-fit: cover;
+  border-radius: 50%;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.18), 0 0 30px rgba(255, 105, 180, 0.35);
+  border: 5px solid #ffffff;
+  display: block;
+}
+
+/* Hat tilted cutely on top-right curve */
+.dp-container .hat {
+  position: absolute;
+  width: 90px;
+  top: -100px;
+  right: -4px;
+  z-index: 5;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25));
+  transform: rotate(18deg);
+  transform-origin: bottom center;
+}
+
+.wish {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.wish-hbd {
+  font-size: clamp(1.8rem, 4.5vw, 3rem);
+  margin: 0 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  color: #ff4081;
+}
+
+.wish h5 {
+  font-weight: 300;
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  line-height: 1.6;
+  margin: 10px auto 0;
+  max-width: 520px;
+  color: #444;
+}
+
+/* Section Seven - Bigger Balloons */
+.baloons img {
+  display: inline-block;
+  position: absolute;
+  max-width: 140px;
+  width: 25vw;
+  min-width: 80px;
+  height: auto;
+  filter: drop-shadow(0 8px 15px rgba(0, 0, 0, 0.12));
+}
+
+.baloons img:nth-child(even) {
+  left: -5%;
+}
+
+.baloons img:nth-child(odd) {
+  right: -5%;
+}
+
+.baloons img:nth-child(3n + 0) {
+  left: 30%;
+}
+
+/* Section Eight - SVGs */
+.eight svg {
+  width: 25px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  z-index: -1;
+}
+
+.eight svg:nth-child(1) {
+  top: 7vh;
+  left: 5vw;
+  fill: #bd6ecf;
+}
+
+.eight svg:nth-child(2) {
+  top: 23vh;
+  left: 35vw;
+  fill: #7dd175;
+}
+
+.eight svg:nth-child(3) {
+  top: 33vh;
+  left: 23vw;
+  fill: #349d8b;
+}
+
+.eight svg:nth-child(4) {
+  top: 43vh;
+  left: 57vw;
+  fill: #347a9d;
+}
+
+.eight svg:nth-child(5) {
+  top: 68vh;
+  left: 7vw;
+  fill: #c66053;
+}
+
+.eight svg:nth-child(6) {
+  top: 42vh;
+  left: 77vw;
+  fill: #bfaa40;
+}
+
+.eight svg:nth-child(7) {
+  top: 68vh;
+  left: 83vw;
+  fill: #e3bae8;
+}
+
+.eight svg:nth-child(8) {
+  top: 86vh;
+  left: 37vw;
+  fill: #8762cb;
+}
+
+.eight svg:nth-child(9) {
+  top: 94vh;
+  left: 87vw;
+  fill: #9a90da;
+}
+
+/* Section Nine - Outro & End Image */
+.nine {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.nine p {
+  font-size: clamp(1.1rem, 2.8vw, 1.6rem);
+  font-weight: 300;
+  margin: 6px 0;
+  color: #333;
+}
+
+.replay-btn-wrapper {
+  margin: 10px 0;
+}
+
+#replay {
+  z-index: 10;
+  cursor: pointer;
+  background: linear-gradient(135deg, #15a1ed 0%, #0d8bd6 100%);
+  color: #ffffff;
+  padding: 10px 22px;
+  border-radius: 25px;
+  font-weight: 500;
+  font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+  box-shadow: 0 4px 15px rgba(21, 161, 237, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: inline-block;
+}
+
+#replay:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 6px 20px rgba(21, 161, 237, 0.45);
+}
+
+.last-smile {
+  font-size: clamp(1.5rem, 4vw, 2.2rem) !important;
+  margin: 4px 0 10px !important;
+}
+
+/* End Image Sizing & Responsiveness */
+.weegen2-dp {
+  width: 260px;
+  max-width: 80vw;
+  max-height: 32vh;
+  object-fit: cover;
+  border-radius: 18px;
+  display: block;
+  margin: 20px auto 0;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18), 0 0 20px rgba(255, 105, 180, 0.25);
+  border: 4px solid #ffffff;
+}
+
+/* Media Queries for Small/Short Viewports */
+@media screen and (max-height: 650px) {
+  .weegen-dp {
+    width: 170px;
+    height: 170px;
+  }
+
+  .dp-container .hat {
+    width: 70px;
+    top: -30px;
+    right: -10px;
+  }
+
+  .weegen2-dp {
+    width: 190px;
+    max-height: 25vh;
+  }
+}
