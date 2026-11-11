@@ -1,0 +1,35 @@
+<%- include('../partials/head', { title: t('users') }) %>
+<h2 class="h"><%= t('users') %></h2>
+<div class="card">
+  <h3>👤 <%= t('currentAdmin') %></h3>
+  <p class="muted small"><%= t('adminNote') %></p>
+  <table class="t small">
+    <tr><th><%= t('username') %></th><th><%= t('whoIsAdmin') %></th><th><%= t('status') %></th></tr>
+    <% users.filter(u => u.role === 'admin').forEach(u => { %>
+    <tr class="<%= u.active ? '' : 'dim' %>"><td><b><%= u.username %></b></td>
+      <td><form method="post" action="/admin/users/<%= u._id %>/member" class="formrow tight">
+        <select name="member"><option value="">—</option><% members.forEach(m => { %><option value="<%= m._id %>" data-s="<%= m.name %> <%= m.nameGu || '' %> <%= m.srNo %> <%= m.mobile || '' %>" <%= u.member && String(u.member._id) === String(m._id) ? 'selected' : '' %>><%= m.srNo %>. <%= mname(m) %></option><% }) %></select>
+        <button class="btn sm"><%= t('save') %></button></form></td>
+      <td><%= u.active ? t('enabled') : t('disabled') %></td></tr>
+    <% }) %>
+  </table>
+</div>
+<div class="card">
+<div class="scroll"><table class="t small">
+  <tr><th><%= t('username') %></th><th><%= t('role') %></th><th><%= t('group') %> / <%= t('name') %></th><th><%= t('lastLogin') %></th><th><%= t('status') %></th><th><%= t('resetPassword') %></th></tr>
+  <% users.forEach(u => { %>
+  <tr class="<%= u.active ? '' : 'dim' %>"><td><b><%= u.username %></b></td><td><span class="tag <%= u.role === 'admin' ? 'head' : 'soft' %>"><%= t(u.role) %></span></td>
+    <td><%= u.group ? (lang === 'gu' && u.group.nameGu ? u.group.nameGu : u.group.name) : (u.member ? mname(u.member) : '—') %></td><td><%= u.lastLogin ? dl(u.lastLogin) : '—' %></td>
+    <td><form method="post" action="/admin/users/<%= u._id %>/toggle"><button class="link small"><%= u.active ? t('enabled') : t('disabled') %></button></form></td>
+    <td><form method="post" action="/admin/users/<%= u._id %>/reset" class="formrow tight"><input name="password" minlength="6" placeholder="<%= t('newPassword') %>" required><button class="btn sm"><%= t('save') %></button></form></td></tr>
+  <% }) %>
+</table></div>
+</div>
+<div class="card">
+  <h3>+ <%= t('addAdmin') %></h3>
+  <form method="post" class="formrow">
+    <select name="member" required><option value=""><%= t('whoIsAdmin') %></option><% members.forEach(m => { %><option value="<%= m._id %>" data-s="<%= m.name %> <%= m.nameGu || '' %> <%= m.srNo %> <%= m.mobile || '' %>"><%= m.srNo %>. <%= mname(m) %></option><% }) %></select>
+    <input name="username" placeholder="<%= t('username') %>" required><input name="password" minlength="6" placeholder="<%= t('password') %>" required><button class="btn"><%= t('add') %></button></form>
+  <p class="muted small"><%= lang === 'gu' ? 'પરિવારના લોગિન "પરિવાર / ગ્રુપ" પાનામાંથી બનાવો. જૂના એડમિનને બંધ કરવા ઉપરના લિસ્ટમાં "ચાલુ" પર ક્લિક કરો.' : 'Family logins are created from the Families page. To retire an admin, click "Enabled" in the list above.' %></p>
+</div>
+<%- include('../partials/foot') %>

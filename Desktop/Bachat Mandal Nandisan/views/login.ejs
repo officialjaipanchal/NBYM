@@ -1,0 +1,20 @@
+<%- include('partials/head', { title: t('login') }) %>
+<div class="loginwrap">
+<div class="loginhero">
+  <div class="lh-mark">ન</div>
+  <div class="lh-short"><%= settings.shortName || 'NBYM' %></div>
+  <div class="lh-full"><%= lang === 'gu' ? settings.mandalNameGu : settings.mandalName %></div>
+  <div class="lh-samaj"><%= lang === 'gu' ? settings.samajNameGu : settings.samajName %></div>
+</div>
+<div class="card narrow ledger">
+  <h2><%= t('login') %></h2>
+  <% if (error) { %><div class="flash err"><%= error %></div><% } %>
+  <form method="post" action="/login" class="stack">
+    <label><%= t('username') %><input name="username" value="<%= username %>" autocomplete="username" inputmode="text" required autofocus></label>
+    <label><%= t('password') %><input name="password" type="password" autocomplete="current-password" required></label>
+    <button class="btn"><%= t('login') %></button>
+  </form>
+  <p class="muted small"><%= t('loginHelp') %></p>
+</div>
+</div>
+<%- include('partials/foot') %>

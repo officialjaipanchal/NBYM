@@ -1,0 +1,72 @@
+<%- include('partials/head', { title: t('home') }) %>
+<h2 class="h"><%= t('welcome') %>, <%= lang === 'gu' && group.nameGu ? group.nameGu : group.name %> <%= t('forFamily') %></h2>
+<p class="muted small"><%= t('year') %> <%= year.label %><% if (year.startDate) { %> (<%= t('bestaVarsh') %> <%= dl(year.startDate) %>)<% } %> · <%= t('dueBy', { d: settings.dueDay }) %> · <%= money(settings.monthlyAmount) %> <%= t('perMember') %></p>
+
+<% if (totals) { %><%- include('partials/stats', { showBal: settings.perm.showBalance, showLent: settings.perm.showTotalLent }) %><% } %>
+
+<div class="card">
+  <div class="row between"><h3><%= t('myFamily') %></h3><span class="pill soft"><%= t('familyTotal') %>: <b><%= money(familyTotal) %></b></span></div>
+  <div class="scroll">
+  <table class="t grid">
+    <tr><th class="sticky"><%= t('name') %></th><% year.months.forEach(mk => { %><th><%= ml(mk, true) %></th><% }) %><th><%= t('total') %></th></tr>
+    <% members.forEach(m => { let tot = 0; %>
+    <tr class="<%= m.status !== 'active' ? 'dim' : '' %>">
+      <td class="sticky"><%= mname(m) %><% if (String(group.head) === String(m._id)) { %> <span class="tag head"><%= t('head') %></span><% } %></td>
+      <% year.months.forEach(mk => { const c = paid[m._id + '|' + mk]; if (c) tot += c.amount; %>
+        <td class="c <%= c ? (c.lateFee ? 'lt' : 'ok') : (started.has(mk) ? 'no' : 'fu') %>" title="<%= c ? dl(c.paidOn) + (c.lateFee ? ' · ' + t('lateFee') + ' ' + money(c.lateFee) : '') : '' %>"><%= c ? '✓' : (started.has(mk) ? '✗' : '·') %></td>
+      <% }) %>
+      <td><b><%= money(tot) %></b></td>
+    </tr>
+    <% }) %>
+  </table>
+  </div>
+  <p class="legend small"><span class="c ok">✓</span> <%= t('onTime') %> <span class="c lt">✓</span> <%= t('late') %> <span class="c no">✗</span> <%= t('notPaid') %> <span class="c fu">·</span> <%= t('upcoming') %><% if (familyFines) { %> · <%= t('fines') %>: <%= money(familyFines) %><% } %></p>
+</div>
+
+<% sahayDue.forEach(x => { %>
+<div class="card sahayc">
+  <h3>🙏 <%= t('sahayFor', { n: mname(x.s.deceased) }) %></h3>
+  <p><%= t('sahayPendingYou') %>: <b><%= money(x.amount) %></b> (<%= x.owe.length %> × <%= money(x.s.amountPerMember) %>)</p>
+  <p class="small muted"><%= x.owe.map(mname).join(', ') %> · <a href="/sahay/<%= x.s._id %>"><%= t('view') %></a></p>
+</div>
+<% }) %>
+<% if (settlement) { %>
+<div class="card settlec">
+  <h3><%= t('lastSettlement') %> · <%= lastYear.label %></h3>
+  <div class="kv">
+    <span><%= t('deposited') %></span><b><%= money(settlement.deposited) %></b>
+    <span>+ <%= t('interestShare') %></span><b><%= money(settlement.dividend) %></b>
+    <span>= <%= t('withInterest') %></span><b><%= money(settlement.payout) %></b>
+    <span>− <%= t('nextMonthCut') %></span><b class="txt-bad"><%= money(settlement.nextDeduct) %></b>
+    <span>= <%= t('netToGive') %></span><b class="netv"><%= money(settlement.net) %></b>
+  </div>
+  <details><summary class="small"><%= t('memberDetail') %></summary>
+    <table class="t small"><% settlementRows.forEach(r => { %><tr><td><%= lang === 'gu' && r.nameGu ? r.nameGu : r.name %></td><td class="r"><%= money(r.payout) %></td><td class="r txt-bad"><%= r.nextDeduct ? '−' + money(r.nextDeduct) : '' %></td><td class="r"><b><%= money(r.net ?? r.payout) %></b></td></tr><% }) %></table>
+  </details>
+</div>
+<% } %>
+
+<% if (myPending.length) { %>
+<div class="card warnc">
+  <h3><%= t('pending') %></h3>
+  <% myPending.forEach(p => { %>
+    <div class="row between pend"><span><%= mname(p.member) %> — <%= p.months.map(x => ml(x.month, true)).join(', ') %></span><b><%= money(p.amount) %><% if (p.fine) { %> + <%= money(p.fine) %> <%= t('fines') %><% } %></b></div>
+  <% }) %>
+</div>
+<% } %>
+
+<% if (myLoans.length) { %>
+<div class="card"><h3>🔒 <%= t('myLoans') %></h3><p class="muted small"><%= t('loanPrivate') %></p>
+  <% myLoans.forEach(x => { %><%- include('partials/loancard', { loan: x.loan, st: x.st }) %><% }) %>
+</div>
+<% } %>
+<% if (guaranteeLoans.length) { %>
+<div class="card"><h3>🔒 <%= t('guaranteeFor') %></h3><p class="muted small"><%= t('loanPrivate') %></p>
+  <% guaranteeLoans.forEach(x => { %><%- include('partials/loancard', { loan: x.loan, st: x.st }) %><% }) %>
+</div>
+<% } %>
+
+<% if (allPendingCount !== null) { %>
+  <p><a class="btn ghost" href="/pending"><%= t('pendingNow') %> (<%= allPendingCount %>)</a></p>
+<% } %>
+<%- include('partials/foot') %>

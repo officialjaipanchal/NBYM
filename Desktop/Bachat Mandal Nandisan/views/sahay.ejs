@@ -1,0 +1,71 @@
+<%- include('partials/head', { title: t('sahay') }) %>
+<p><a href="/sahay">← <%= t('sahay') %></a></p>
+<div class="card">
+  <h2>🙏 <%= t('sahayFor', { n: mname(s.deceased) }) %></h2>
+  <div class="kv">
+    <span><%= t('dateOfDeath') %></span><b><%= dl(s.dateOfDeath) %></b>
+    <span><%= t('perHead') %></span><b><%= money(s.amountPerMember) %></b>
+    <span><%= t('recipient') %></span><b><%= s.recipient ? mname(s.recipient) : (s.recipientName || '—') %><% if (s.recipientMobile) { %> · <a href="tel:<%= s.recipientMobile %>">📞 <%= s.recipientMobile %></a><% } %></b>
+    <span><%= t('status') %></span><b><span class="tag <%= s.status === 'given' ? 'active' : 'no' %>"><%= t(s.status) %></span><% if (s.status === 'given') { %> · <%= money(s.givenAmount) %> · <%= dl(s.givenOn) %><% } %></b>
+    <% if (s.note) { %><span><%= t('note') %></span><b><%= s.note %></b><% } %>
+  </div>
+  <div class="stats">
+    <div class="stat big"><span><%= t('collected') %></span><b><%= money(st.collected) %></b></div>
+    <div class="stat"><span><%= t('expected') %></span><b><%= money(st.expected) %></b></div>
+    <div class="stat"><span><%= t('remaining') %></span><b><%= money(st.remaining) %></b></div>
+  </div>
+  <div class="bar"><i style="width:<%= st.total ? Math.round(st.paidCount * 100 / st.total) : 0 %>%"></i></div>
+  <p class="small"><%= t('paidCount', { a: st.total, b: st.paidCount }) %></p>
+  <% if (deposit !== null && deposit > 0) { %><div class="flash warn small"><%= t('returnDeposit', { a: money(deposit) }) %></div><% } %>
+</div>
+
+<% if (me.role === 'admin' && s.status === 'collecting') { %>
+<div class="card">
+  <h3><%= t('giveToFamily') %></h3>
+  <form method="post" action="/sahay/<%= s._id %>/give" class="formrow" data-confirm="<%= t('giveToFamily') %>?">
+    <input type="date" name="givenOn" value="<%= di(today) %>"><input type="number" name="givenAmount" value="<%= st.collected %>">
+    <select name="recipient" title="<%= t('recipient') %>"><% recChoices.forEach(m => { %><option value="<%= m._id %>" data-s="<%= m.name %> <%= m.nameGu || '' %> <%= m.srNo %> <%= m.mobile || '' %>" <%= s.recipient && String(s.recipient._id) === String(m._id) ? 'selected' : '' %>><%= mname(m) %></option><% }) %></select><input name="note" placeholder="<%= t('note') %>">
+    <button class="btn"><%= t('save') %></button>
+  </form>
+</div>
+<% } %>
+
+<form method="post" action="/sahay/<%= s._id %>/pay" id="coll">
+<% if (me.role === 'admin') { %>
+<div class="card sticky-bar"><div class="formrow">
+  <label><%= t('paidOn') %> <input type="date" name="paidOn" value="<%= di(today) %>"></label>
+  <button type="button" class="btn ghost sm" onclick="document.querySelectorAll('#coll input[name=pay]').forEach(x=>x.checked=true)"><%= t('markAll') %></button>
+  <button class="btn"><%= t('save') %></button>
+</div></div>
+<% } %>
+<input class="search" data-cardsearch placeholder="🔍 <%= t('typeToSearch') %>">
+<div class="gridcards">
+<% groups.forEach(g => { const ms = members.filter(m => String(m.group) === String(g._id)); if (!ms.length) return; const left = ms.filter(m => !payOn[String(m._id)]).length; %>
+  <div class="card" data-s="<%= g.name %> <%= g.mobile || '' %> <%= ms.map(m => m.name + ' ' + m.srNo).join(' ') %>">
+    <div class="row between"><h3><%= lang === 'gu' && g.nameGu ? g.nameGu : g.name %></h3>
+      <% if (left) { %><span class="tag no"><%= t('remaining') %> <%= money(left * s.amountPerMember) %></span><% } else { %><span class="tag active">✓</span><% } %></div>
+    <table class="t small">
+    <% ms.forEach(m => { const p = payOn[String(m._id)]; %>
+      <tr>
+        <% if (p) { %><td class="c ok">✓</td><td><%= mname(m) %></td><td class="small muted"><%= dl(p.paidOn) %></td>
+          <td class="r"><% if (me.role === 'admin') { %><button class="link small" form="u<%= p._id %>"><%= t('undo') %></button><% } %></td>
+        <% } else if (me.role === 'admin' && s.status === 'collecting') { %><td><input type="checkbox" name="pay" value="<%= m._id %>" id="s<%= m._id %>"></td><td colspan="3"><label for="s<%= m._id %>"><%= mname(m) %></label></td>
+        <% } else { %><td class="c no">✗</td><td colspan="3"><%= mname(m) %></td><% } %>
+      </tr>
+    <% }) %>
+    </table>
+  </div>
+<% }) %>
+</div>
+</form>
+<% if (me.role === 'admin') { s.payments.forEach(p => { %><form id="u<%= p._id %>" method="post" action="/sahay/<%= s._id %>/undo/<%= p._id %>" data-confirm="<%= t('confirmDelete') %>"></form><% }) } %>
+<% if (me.role === 'admin') { %>
+<div class="card dangerc">
+  <h3>🗑 <%= t('deleteEntry') %></h3>
+  <form method="post" action="/sahay/<%= s._id %>/delete" class="formrow" data-confirm="<%= t('confirmDelete') %> (<%= st.paidCount %> × <%= money(s.amountPerMember) %>)">
+    <label class="chk"><input type="checkbox" name="restore" checked> <%= t('restoreActive', { n: mname(s.deceased) }) %></label>
+    <button class="btn danger sm"><%= t('delete') %></button>
+  </form>
+</div>
+<% } %>
+<%- include('partials/foot') %>

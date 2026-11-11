@@ -1,0 +1,19 @@
+<div class="loan <%= st.overdue ? 'bad' : '' %>">
+  <div class="row between"><b><%= mname(loan.borrower) %></b><span class="tag <%= loan.status %>"><%= t(loan.status) %></span></div>
+  <div class="kv">
+    <span><%= t('loanAmount') %></span><b><%= money(loan.amount) %></b>
+    <span><%= t('loanDate') %></span><b><%= dl(loan.date) %></b>
+    <span><%= t('rate') %></span><b><%= loan.rate %>% <%= t(loan.ratePeriod === 'monthly' ? 'perMonth' : 'perYear') %></b>
+    <span><%= t('outstanding') %></span><b><%= money(st.principal) %></b>
+    <span><%= t('interestDue') %></span><b><%= money(st.interestDue) %></b>
+    <span><%= t('totalDue') %></span><b><%= money(st.totalDue) %></b>
+    <span><%= t('guarantors') %></span><b><%= loan.guarantors.map(mname).join(', ') %></b>
+  </div>
+  <% if (st.overdue) { %><div class="flash err small"><%= t('overdue') %></div><% } %>
+  <% if (st.rows.length) { %>
+  <details><summary><%= t('repayments') %> (<%= st.rows.length %>)</summary>
+    <table class="t small"><tr><th><%= t('date') %></th><th><%= t('amount') %></th><th><%= t('toInterest') %></th><th><%= t('toPrincipal') %></th></tr>
+    <% st.rows.forEach(r => { %><tr><td><%= dl(r.date) %></td><td><%= money(r.amount) %></td><td><%= money(r.toInterest) %></td><td><%= money(r.toPrincipal) %></td></tr><% }) %></table>
+  </details>
+  <% } %>
+</div>

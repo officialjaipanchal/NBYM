@@ -1,0 +1,20 @@
+<%- include('../partials/head', { title: t('yearEnd') }) %>
+<h2 class="h"><%= t('yearSummary') %> · <%= year.label %> <span class="muted small">(<% if (year.startDate) { %><%= t('bestaVarsh') %> <%= dl(year.startDate) %> · <% } %><%= ml(year.months[0]) %> – <%= ml(year.months[11]) %>)</span></h2>
+<%- include('partials-summary') %>
+<div class="card dangerc">
+  <h3><%= t('closeYear') %></h3>
+  <% if (activeLoans) { %><div class="flash err"><%= t('activeLoansBlock') %> (<%= activeLoans %>)</div><% } %>
+  <form method="post" action="/admin/year/close" class="stack two" data-confirm="<%= t('closeYear') %>?">
+    <label><%= t('newYearLabel') %><input name="label" value="<%= nextLabel %>"></label>
+    <label><%= t('bestaVarsh') %><input name="startDate" type="date" value="<%= di(today) %>"></label>
+    <label><%= t('newYearStart') %><input name="start" type="month" value="<%= nextStart %>"></label>
+    <label><%= t('opening') %><input name="openingBalance" type="number" value="0"></label>
+    <label class="chk full"><input type="checkbox" name="adjustFirstMonth" checked> <%= t('adjustFirstMonth', { m: ml(nextStart) }) %></label>
+    <label><%= t('typeConfirm') %><input name="confirm" placeholder="CLOSE" autocomplete="off"></label>
+    <div><button class="btn danger" <%= activeLoans ? 'disabled' : '' %>><%= t('closeYear') %></button></div>
+  </form>
+</div>
+<% if (pastYears.length) { %>
+<div class="card"><h3><%= t('pastYears') %></h3><% pastYears.forEach(y => { %><p><a href="/admin/years/<%= y._id %>"><%= y.label %></a> · <%= dl(y.closedAt) %></p><% }) %></div>
+<% } %>
+<%- include('../partials/foot') %>

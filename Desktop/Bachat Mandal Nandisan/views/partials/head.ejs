@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="<%= lang %>">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= typeof title !== 'undefined' ? title + ' · ' : '' %><%= settings.shortName || 'NBYM' %></title>
+<meta name="theme-color" content="#1d2b4f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Bhai+2:wght@500;600;700;800&family=Hind+Vadodara:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand<%= me ? '' : ' nologin' %>" href="/">
+    <span class="mark" aria-hidden="true">ન</span>
+    <span class="bnames">
+      <span class="bname"><%= settings.shortName || 'NBYM' %></span>
+      <span class="bfull"><%= lang === 'gu' ? settings.mandalNameGu : settings.mandalName %></span>
+    </span>
+  </a>
+  <div class="topact">
+    <% if (me) { %><span class="who"><%= me.role === 'admin' ? t('admin') + ' · ' : '' %><%= me.displayName || me.username %></span><% } %>
+    <a class="pill" href="/lang/<%= lang === 'gu' ? 'en' : 'gu' %>" title="Language"><%= t('lang') %></a>
+    <% if (me) { %>
+      <a class="pill ghost icon" href="/change-password" title="<%= t('changePassword') %>">🔑</a>
+      <form method="post" action="/logout" class="inline"><button class="pill ghost"><%= t('logout') %></button></form>
+    <% } %>
+  </div>
+</header>
+<% if (me && !me.mustChangePassword) { %>
+<nav class="nav">
+  <% const L = (href, key) => `<a href="${href}" class="${(href === '/' ? path === '/' : (href === '/admin' ? path === '/admin' || path === '/admin/' : path.startsWith(href))) ? 'on' : ''}">${t(key)}</a>`; %>
+  <% if (me.role === 'admin') { %>
+    <%- L('/admin', 'dashboard') %><%- L('/admin/collections', 'collections') %><%- L('/admin/groups', 'groups') %>
+    <%- L('/admin/loans', 'loans') %><%- L('/pending', 'pending') %><%- L('/sahay', 'sahay') %><%- L('/admin/ledger', 'ledger') %>
+    <%- L('/admin/year', 'yearEnd') %><%- L('/admin/users', 'users') %><%- L('/admin/settings', 'settings') %>
+    <%- L('/admin/audit', 'audit') %><%- L('/rules', 'rules') %>
+  <% } else { %>
+    <%- L('/', 'home') %>
+    <% if (settings.perm.showPending) { %><%- L('/pending', 'pending') %><% } %>
+    <% if (settings.perm.showAllMembers) { %><%- L('/members', 'allMembers') %><% } %>
+    <%- L('/sahay', 'sahay') %>
+    <% if (settings.perm.showRules) { %><%- L('/rules', 'rules') %><% } %>
+  <% } %>
+</nav>
+<% } %>
+<% if (me && admins && admins.length) { %>
+<div class="adminbar">👤 <%= t('currentAdmin') %>: <% admins.forEach((a, i) => { %><%= i ? ', ' : '' %><b><%= a.member ? mname(a.member) : a.displayName || a.username %></b><% if (a.member && a.member.mobile) { %> <a href="tel:<%= a.member.mobile %>">📞 <%= a.member.mobile %></a><% } %><% }) %></div>
+<% } %>
+<main class="wrap">
+<% if (flash) { %><div class="flash <%= flash.type %>"><%= flash.text %></div><% } %>

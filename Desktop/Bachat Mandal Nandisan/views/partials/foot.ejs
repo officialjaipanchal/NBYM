@@ -1,0 +1,62 @@
+</main>
+<footer class="foot"><div><%= lang === 'gu' ? settings.samajNameGu : settings.samajName %></div><div class="small"><%= t('footer') %></div></footer>
+<script>
+// Searchable dropdowns: any <select> with more than 8 choices gets a type-to-search box.
+(function () {
+  const PH = <%- JSON.stringify('🔍 ' + t('typeToSearch')) %>, NONE = <%- JSON.stringify(t('noMatch')) %>;
+  const norm = (s) => (s || '').toLowerCase();
+  function combo(sel) {
+    if (sel.dataset.combo) return; sel.dataset.combo = '1';
+    const wrap = document.createElement('div'); wrap.className = 'combo';
+    sel.parentNode.insertBefore(wrap, sel); wrap.appendChild(sel); sel.classList.add('combo-native'); sel.tabIndex = -1;
+    const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = PH; inp.autocomplete = 'off';
+    const list = document.createElement('div'); list.className = 'combo-list'; list.hidden = true;
+    wrap.append(inp, list);
+    let items = [], act = -1;
+    const label = () => { const o = sel.selectedOptions[0]; inp.value = o && o.value ? o.text : ''; };
+    const pick = (o) => { sel.value = o.value; sel.dispatchEvent(new Event('change', { bubbles: true })); label(); list.hidden = true; inp.blur(); };
+    const mark = () => items.forEach((d, i) => d.classList.toggle('act', i === act));
+    function render(q) {
+      list.innerHTML = ''; items = []; act = -1;
+      let opts = [...sel.options].filter((o) => o.value && !o.hidden && (!q || norm(o.text + ' ' + (o.dataset.s || '')).includes(norm(q))));
+      // exact Sr. number ("8" -> "8. ...") and name-start matches first
+      if (q) { const nq = norm(q.trim()); const rank = (o) => (norm(o.text).startsWith(nq + '. ') ? 0 : norm(o.text.replace(/^\d+\.\s*/, '')).startsWith(nq) ? 1 : 2); opts = opts.sort((x, y) => rank(x) - rank(y)); }
+      for (const o of opts) {
+        const d = document.createElement('div');
+        d.className = 'combo-item' + (o.disabled ? ' dis' : '') + (o.value === sel.value ? ' on' : '');
+        d.textContent = o.text;
+        if (!o.disabled) { d.addEventListener('mousedown', (e) => { e.preventDefault(); pick(o); }); d._o = o; items.push(d); }
+        list.appendChild(d);
+      }
+      if (!list.children.length) { const d = document.createElement('div'); d.className = 'combo-item dis'; d.textContent = NONE; list.appendChild(d); }
+      if (q && items.length) { act = 0; mark(); }
+      list.hidden = false;
+    }
+    inp.addEventListener('focus', () => { inp.value = ''; render(''); });
+    inp.addEventListener('input', () => render(inp.value));
+    inp.addEventListener('blur', () => { list.hidden = true; label(); });
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!items.length) return; act = (act + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length; mark(); items[act].scrollIntoView({ block: 'nearest' }); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (items[act >= 0 ? act : 0]) pick(items[act >= 0 ? act : 0]._o); }
+      else if (e.key === 'Escape') { inp.blur(); }
+    });
+    sel.addEventListener('change', label);
+    sel.addEventListener('invalid', () => { inp.focus(); });
+    sel.addEventListener('focus', () => inp.focus());
+    label();
+  }
+  document.querySelectorAll('select').forEach((s) => { if (s.options.length > 8) combo(s); });
+
+  // Family-card search on pages with many family cards
+  const box = document.querySelector('[data-cardsearch]');
+  if (box) box.addEventListener('input', () => {
+    const q = norm(box.value);
+    document.querySelectorAll('.gridcards > .card[data-s]').forEach((c) => { c.style.display = !q || norm(c.textContent + ' ' + (c.dataset.s || '')).includes(q) ? '' : 'none'; });
+  });
+})();
+</script>
+<script>
+document.querySelectorAll('form[data-confirm]').forEach(f => f.addEventListener('submit', e => { if (!confirm(f.dataset.confirm)) e.preventDefault(); }));
+</script>
+</body>
+</html>

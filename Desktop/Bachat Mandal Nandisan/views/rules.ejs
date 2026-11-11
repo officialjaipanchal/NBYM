@@ -1,0 +1,8 @@
+<%- include('partials/head', { title: t('rules') }) %>
+<div class="card">
+  <h2><%= t('rules') %></h2>
+  <ol class="rules">
+    <% rules.forEach(r => { %><li><div><%= r.gu %></div><% if (lang === 'en') { %><div class="muted"><%= r.en %></div><% } %></li><% }) %>
+  </ol>
+</div>
+<%- include('partials/foot') %>

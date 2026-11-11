@@ -1,0 +1,36 @@
+<%- include('../partials/head', { title: t('editMember') }) %>
+<p><a href="/admin/groups#g<%= member.group._id %>">← <%= t('back') %></a></p>
+<div class="card">
+  <h2><%= t('editMember') %>: <%= mname(member) %></h2>
+  <form method="post" class="stack two">
+    <label><%= t('srNo') %><input name="srNo" type="number" value="<%= member.srNo %>"></label>
+    <label><%= t('nameEn') %><input name="name" value="<%= member.name %>" required></label>
+    <label><%= t('nameGu') %><input name="nameGu" value="<%= member.nameGu || '' %>"></label>
+    <label><%= t('mobile') %><input name="mobile" value="<%= member.mobile || '' %>"></label>
+    <label><%= t('group') %> (<%= t('moveTo') %>)<select name="group"><% groups.forEach(g => { %><option value="<%= g._id %>" data-s="<%= g.name %> <%= g.nameGu || '' %> <%= g.mobile || '' %>" <%= String(g._id) === String(member.group._id) ? 'selected' : '' %>><%= lang === 'gu' && g.nameGu ? g.nameGu : g.name %></option><% }) %></select></label>
+    <label><%= t('status') %><select name="status"><% ['active', 'left', 'deceased'].forEach(s => { %><option value="<%= s %>" <%= member.status === s ? 'selected' : '' %>><%= t(s) %></option><% }) %></select></label>
+    <div><button class="btn"><%= t('save') %></button></div>
+  </form>
+  <form method="post" action="/admin/members/<%= member._id %>/delete" data-confirm="<%= t('confirmDelete') %>"><button class="btn sm danger"><%= t('delete') %></button></form>
+</div>
+<div class="card">
+  <h3><%= t('collections') %> · <%= year.label %></h3>
+  <table class="t small">
+    <tr><th><%= t('month') %></th><th><%= t('paidOn') %></th><th><%= t('amount') %></th><th><%= t('lateFee') %></th><th></th></tr>
+    <% contribs.forEach(c => { %>
+    <tr><td><%= ml(c.month) %></td><td colspan="4">
+      <form method="post" action="/admin/contributions/<%= c._id %>" class="formrow tight">
+        <input type="date" name="paidOn" value="<%= di(c.paidOn) %>"><span><%= money(c.amount) %></span>
+        <input type="number" name="lateFee" value="<%= c.lateFee %>" style="max-width:6em"><input name="note" value="<%= c.note || '' %>" placeholder="<%= t('note') %>">
+        <button class="btn sm"><%= t('save') %></button>
+      </form>
+    </td></tr>
+    <% }) %>
+  </table>
+</div>
+<% if (loans.length) { %>
+<div class="card"><h3>🔒 <%= t('loans') %></h3>
+  <% loans.forEach(l => { %><p><a href="/admin/loans/<%= l._id %>"><%= mname(l.borrower) %> · <%= money(l.amount) %> · <%= dl(l.date) %></a> <span class="tag <%= l.status %>"><%= t(l.status) %></span> <%= String(l.borrower._id) === String(member._id) ? t('borrower') : t('guarantor') %></p><% }) %>
+</div>
+<% } %>
+<%- include('../partials/foot') %>

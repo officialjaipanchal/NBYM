@@ -1,0 +1,5 @@
+<%- include('../partials/head', { title: year.label }) %>
+<p><a href="/admin/year">← <%= t('yearEnd') %></a></p>
+<h2 class="h"><%= t('yearSummary') %> · <%= year.label %> (<%= t('closed') %> <%= dl(year.closedAt) %>)</h2>
+<%- include('partials-summary') %>
+<%- include('../partials/foot') %>

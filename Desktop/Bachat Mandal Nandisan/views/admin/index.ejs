@@ -1,0 +1,68 @@
+<%- include('../partials/head', { title: t('dashboard') }) %>
+<h2 class="h"><%= t('dashboard') %> · <%= t('year') %> <%= year.label %></h2>
+<% if (year.startDate) { %><p class="muted small"><%= t('yearStarted') %>: <%= t('bestaVarsh') %> <%= dl(year.startDate) %></p><% } %>
+<%- include('../partials/stats', { showBal: true, showLent: true, full: true }) %>
+<div class="gridcards">
+  <div class="card">
+    <h3><%= t('collections') %></h3>
+    <p><%= t('groups') %>: <b><%= counts.groups %></b> · <%= t('members') %>: <b><%= counts.members %></b></p>
+    <% if (lastMonth) { %><p><%= ml(lastMonth) %>: <b><%= t('paidCount', { a: counts.members, b: paidLast }) %></b></p>
+    <div class="bar"><i style="width:<%= counts.members ? Math.round(paidLast * 100 / counts.members) : 0 %>%"></i></div><% } %>
+    <p><a class="btn" href="/admin/collections"><%= t('markPaid') %></a></p>
+  </div>
+  <div class="card">
+    <h3><%= t('pendingNow') %></h3>
+    <p><b><%= pending.length %></b> <%= t('members') %> · <%= money(pending.reduce((a, p) => a + p.amount, 0)) %> + <%= t('fines') %> <%= money(pending.reduce((a, p) => a + p.fine, 0)) %></p>
+    <p><a class="btn ghost" href="#pending"><%= t('view') %> ↓</a></p>
+  </div>
+  <div class="card">
+    <h3>🔒 <%= t('loans') %></h3>
+    <p><%= t('active') %>: <b><%= totals.activeLoans %></b> · <%= t('outstanding') %>: <b><%= money(totals.outstanding) %></b></p>
+    <% overdue.forEach(x => { %><div class="flash err small"><a href="/admin/loans/<%= x.l._id %>"><%= mname(x.l.borrower) %></a> — <%= t('overdue') %></div><% }) %>
+    <p><a class="btn ghost" href="/admin/loans"><%= t('view') %></a></p>
+  </div>
+</div>
+<div class="card" id="pending">
+  <div class="row between">
+    <h3>⏳ <%= t('pendingNow') %> (<%= pending.length %>)</h3>
+    <% if (pendingFamilies.length) { %><span class="tag no"><%= pendingFamilies.length %> <%= t('groups') %> · <%= money(pending.reduce((a, p) => a + p.amount, 0)) %></span><% } %>
+  </div>
+  <% if (!pendingFamilies.length) { %><p class="muted"><%= t('nobodyPending') %></p><% } else { %>
+  <input class="search" data-cardsearch placeholder="🔍 <%= t('typeToSearch') %>">
+  <div class="gridcards">
+  <% pendingFamilies.forEach(f => { const g = f.group || {}; const gname = lang === 'gu' && g.nameGu ? g.nameGu : g.name;
+       const months = [...new Set(f.items.flatMap(p => p.months.map(x => x.month)))].sort();
+       const msg = (lang === 'gu' ? 'જય વિશ્વકર્મા 🙏 ' + (settings.shortName || 'NBYM') + ' બચત મંડળ: ' + gname + ' પરિવારના ' + f.items.length + ' સભ્યનો હપ્તો બાકી છે (' + months.map(m => ml(m)).join(', ') + '). કુલ ' + money(f.amount) + (f.fine ? ' + દંડ ' + money(f.fine) : '') + '. દર મહિને ' + settings.dueDay + ' તારીખ સુધીમાં ભરવા વિનંતી.'
+                                  : 'Jay Vishwakarma 🙏 ' + (settings.shortName || 'NBYM') + ': ' + f.items.length + ' member(s) of ' + gname + ' family have pending savings (' + months.map(m => ml(m)).join(', ') + '). Total ' + money(f.amount) + (f.fine ? ' + late fee ' + money(f.fine) : '') + '. Please pay by the ' + settings.dueDay + 'th.');
+       const wa = g.mobile && /^\d{10}$/.test(g.mobile) ? 'https://wa.me/91' + g.mobile + '?text=' + encodeURIComponent(msg) : null; %>
+    <div class="card pendfam" data-s="<%= g.name %> <%= g.mobile || '' %> <%= f.items.map(p => p.member.name + ' ' + p.member.srNo).join(' ') %>">
+      <div class="row between"><b><%= gname %></b><b class="txt-bad"><%= money(f.amount) %><% if (f.fine) { %> <span class="small">+ <%= money(f.fine) %></span><% } %></b></div>
+      <table class="t small">
+        <% f.items.forEach(p => { %><tr><td><%= mname(p.member) %></td><td class="r"><% p.months.forEach(x => { %><span class="tag <%= x.late ? 'no' : 'soft' %>"><%= ml(x.month, true) %></span> <% }) %></td></tr><% }) %>
+      </table>
+      <div class="row gap small">
+        <% if (g.mobile) { %><a class="btn ghost sm" href="tel:<%= g.mobile %>">📞 <%= g.mobile %></a><% } %>
+        <% if (wa) { %><a class="btn ghost sm" href="<%= wa %>" target="_blank" rel="noopener">💬 WhatsApp</a><% } %>
+        <a class="btn sm" href="/admin/collections?month=<%= months[months.length - 1] %>">✓ <%= t('markPaid') %></a>
+      </div>
+    </div>
+  <% }) %>
+  </div>
+  <% } %>
+</div>
+
+<div class="card">
+  <h3><%= t('currentBalance') %></h3>
+  <table class="t small">
+    <tr><td><%= t('opening') %></td><td class="r"><%= money(totals.opening) %></td></tr>
+    <tr><td>+ <%= t('totalDeposits') %></td><td class="r"><%= money(totals.deposits) %></td></tr>
+    <tr><td>+ <%= t('fines') %></td><td class="r"><%= money(totals.fines) %></td></tr>
+    <tr><td>+ <%= t('interestIn') %></td><td class="r"><%= money(totals.interestIn) %></td></tr>
+    <tr><td>+ <%= t('principalBack') %></td><td class="r"><%= money(totals.principalBack) %></td></tr>
+    <tr><td>+ <%= t('otherIn') %></td><td class="r"><%= money(totals.otherIn) %></td></tr>
+    <tr><td>− <%= t('lentTotal') %></td><td class="r"><%= money(totals.lent) %></td></tr>
+    <tr><td>− <%= t('otherOut') %></td><td class="r"><%= money(totals.otherOut) %></td></tr>
+    <tr class="totrow"><td>= <%= t('currentBalance') %></td><td class="r"><%= money(totals.cash) %></td></tr>
+  </table>
+</div>
+<%- include('../partials/foot') %>

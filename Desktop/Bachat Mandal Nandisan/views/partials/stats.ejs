@@ -1,0 +1,11 @@
+<div class="stats">
+  <% if (showBal) { %><div class="stat big"><span><%= t('currentBalance') %></span><b><%= money(totals.cash) %></b></div><% } %>
+  <% if (showBal) { %><div class="stat"><span><%= t('totalDeposits') %></span><b><%= money(totals.deposits) %></b></div><% } %>
+  <% if (showLent) { %><div class="stat"><span><%= t('totalLent') %></span><b><%= money(totals.outstanding) %></b></div><% } %>
+  <% if (typeof full !== 'undefined' && full) { %>
+    <div class="stat"><span><%= t('interestIn') %></span><b><%= money(totals.interestIn) %></b></div>
+    <div class="stat"><span><%= t('fines') %></span><b><%= money(totals.fines) %></b></div>
+    <div class="stat"><span><%= t('interestAccrued') %></span><b><%= money(totals.interestAccrued) %></b></div>
+    <div class="stat"><span><%= t('totalAssets') %></span><b><%= money(totals.totalAssets) %></b></div>
+  <% } %>
+</div>

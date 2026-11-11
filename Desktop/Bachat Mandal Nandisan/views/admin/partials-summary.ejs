@@ -1,0 +1,36 @@
+<div class="stats">
+  <div class="stat"><span><%= t('totalDeposits') %></span><b><%= money(summary.totals.deposits) %></b></div>
+  <div class="stat"><span><%= t('interestIn') %></span><b><%= money(summary.totals.interestIn) %></b></div>
+  <div class="stat"><span><%= t('fines') %></span><b><%= money(summary.totals.fines) %></b></div>
+  <div class="stat"><span><%= t('dividendPool') %></span><b><%= money(summary.pool) %></b></div>
+  <div class="stat"><span><%= t('cashCheck') %></span><b><%= money(summary.totals.cash) %></b></div>
+  <% if (summary.settle) { %><div class="stat big"><span><%= t('netToGive') %></span><b><%= money(summary.settle.net) %></b></div><% } %>
+</div>
+<% if (summary.families) { %>
+<div class="card printable">
+  <div class="row between"><h3><%= t('familySettlement') %> · <%= summary.label %></h3><button type="button" class="btn ghost sm noprint" onclick="window.print()">🖨 <%= t('print') %></button></div>
+  <p class="muted small"><%= t('settleNote', { a: summary.monthly }) %></p>
+  <div class="scroll"><table class="t settle">
+    <tr><th><%= t('group') %></th><th><%= t('membersCount') %></th><th class="r"><%= t('deposited') %></th><th class="r">+ <%= t('interestShare') %></th><th class="r">= <%= t('withInterest') %></th><th class="r">− <%= t('nextMonthCut') %></th><th class="r">= <%= t('netToGive') %></th></tr>
+    <% summary.families.forEach(f => { %>
+    <tr><td><b><%= lang === 'gu' && f.nameGu ? f.nameGu : f.name %></b><div class="small muted"><%= f.mobile || '' %></div></td><td><%= f.count %></td>
+      <td class="r"><%= money(f.deposited) %></td><td class="r"><%= money(f.dividend) %></td><td class="r"><%= money(f.payout) %></td>
+      <td class="r txt-bad"><%= f.nextDeduct ? money(f.nextDeduct) + ' (' + f.adjustedMembers + '×' + summary.monthly + ')' : '—' %></td>
+      <td class="r"><b class="netv"><%= money(f.net) %></b></td></tr>
+    <% }) %>
+    <tr class="totrow"><td><%= t('total') %></td><td><%= summary.rows.length %></td><td class="r"><%= money(summary.settle.deposited) %></td><td class="r"><%= money(summary.settle.dividend) %></td><td class="r"><%= money(summary.settle.payout) %></td><td class="r"><%= money(summary.settle.nextDeduct) %></td><td class="r"><%= money(summary.settle.net) %></td></tr>
+  </table></div>
+</div>
+<% } %>
+<details class="card"><summary><b><%= t('memberDetail') %></b></summary>
+  <p class="muted small"><%= t('dividendNote') %></p>
+  <div class="scroll"><table class="t small">
+    <tr><th>#</th><th><%= t('name') %></th><th class="r"><%= t('deposited') %></th><th><%= t('months') %></th><th class="r"><%= t('fines') %></th><th class="r"><%= t('interestShare') %></th><th class="r"><%= t('withInterest') %></th><th class="r">− <%= t('nextMonthCut') %></th><th class="r"><%= t('netToGive') %></th></tr>
+    <% summary.rows.forEach(r => { %>
+    <tr class="<%= r.eligible ? '' : 'badrow' %>"><td><%= r.srNo %></td><td><%= lang === 'gu' && r.nameGu ? r.nameGu : r.name %><% if (r.status !== 'active') { %> <span class="tag closed"><%= t(r.status) %></span><% } %></td>
+      <td class="r"><%= money(r.deposited) %></td><td><%= r.count %>/<%= summary.dueCount %></td><td class="r"><%= r.fines ? money(r.fines) : '' %></td>
+      <td class="r"><%= r.eligible ? money(r.dividend) : t('principalOnly') %></td><td class="r"><%= money(r.payout) %></td>
+      <td class="r"><%= r.nextDeduct ? money(r.nextDeduct) : '—' %></td><td class="r"><b><%= money(r.net ?? r.payout) %></b></td></tr>
+    <% }) %>
+  </table></div>
+</details>

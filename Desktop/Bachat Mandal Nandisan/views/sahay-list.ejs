@@ -1,0 +1,44 @@
+<%- include('partials/head', { title: t('sahay') }) %>
+<h2 class="h">🙏 <%= t('sahayTitle') %></h2>
+<div class="flash warn small"><%= t('sahayNote') %></div>
+<div class="card">
+<% if (!rows.length) { %><p class="muted"><%= t('noSahay') %></p><% } else { %>
+<div class="scroll"><table class="t">
+  <tr><th><%= t('deceasedMember') %></th><th><%= t('dateOfDeath') %></th><th><%= t('collected') %></th><th><%= t('remaining') %></th><th><%= t('recipient') %></th><th><%= t('status') %></th></tr>
+  <% rows.forEach(({ s, st }) => { %>
+  <tr><td><a href="/sahay/<%= s._id %>"><b><%= mname(s.deceased) %></b></a></td><td><%= dl(s.dateOfDeath) %></td>
+    <td><%= money(st.collected) %> <span class="small muted">(<%= st.paidCount %>/<%= st.total %>)</span></td><td><%= money(st.remaining) %></td>
+    <td><%= s.recipient ? mname(s.recipient) : (s.recipientName || '—') %></td><td><span class="tag <%= s.status === 'given' ? 'active' : 'no' %>"><%= t(s.status) %></span></td></tr>
+  <% }) %>
+</table></div>
+<% } %>
+</div>
+<% if (me.role === 'admin') { %>
+<div class="card">
+  <h3>+ <%= t('newSahay') %></h3>
+  <form method="post" action="/sahay" class="stack two" data-confirm="<%= t('newSahay') %>?">
+    <label><%= t('deceasedMember') %><select name="deceased" id="dec" required><option value=""></option><% members.forEach(m => { %><option value="<%= m._id %>" data-s="<%= m.name %> <%= m.nameGu || '' %> <%= m.srNo %> <%= m.mobile || '' %>" data-g="<%= m.group %>"><%= m.srNo %>. <%= mname(m) %></option><% }) %></select></label>
+    <label><%= t('dateOfDeath') %><input type="date" name="dateOfDeath" value="<%= di(today) %>" required></label>
+    <label><%= t('perHead') %><input type="number" name="amountPerMember" value="<%= settings.insuranceAmount %>" min="1"></label>
+    <label><%= t('recipient') %><select name="recipient" id="rec" required><option value=""></option><% allMembers.forEach(m => { %><option value="<%= m._id %>" data-s="<%= m.name %> <%= m.nameGu || '' %> <%= m.srNo %> <%= m.mobile || '' %>" data-g="<%= m.group._id %>"><%= m.srNo %>. <%= mname(m) %> (<%= lang === 'gu' && m.group.nameGu ? m.group.nameGu : m.group.name %>)</option><% }) %></select></label>
+    <label><%= t('note') %><input name="note"></label>
+    <div><button class="btn"><%= t('newSahay') %></button></div>
+  </form>
+</div>
+<script>
+// Receiver: show only the deceased member's family; if they were alone in the family, show everyone
+(function () {
+  const dec = document.getElementById('dec'), rec = document.getElementById('rec');
+  if (!dec || !rec) return;
+  const opts = [...rec.options].slice(1);
+  dec.addEventListener('change', () => {
+    const o = dec.selectedOptions[0], g = o && o.dataset.g;
+    const fam = opts.filter(x => x.dataset.g === g && x.value !== dec.value);
+    opts.forEach(x => { x.hidden = x.value === dec.value || (fam.length > 0 && x.dataset.g !== g); });
+    rec.value = fam.length ? fam[0].value : '';
+    rec.dispatchEvent(new Event('change'));
+  });
+})();
+</script>
+<% } %>
+<%- include('partials/foot') %>

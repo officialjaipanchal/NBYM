@@ -1,0 +1,19 @@
+<%- include('partials/head', { title: t('pending') }) %>
+<h2 class="h"><%= t('pendingNow') %></h2>
+<p class="muted small"><%= t('year') %> <%= year.label %> · <%= t('dueBy', { d: settings.dueDay }) %></p>
+<% if (!list.length) { %><div class="card center"><%= t('nobodyPending') %></div><% } else { %>
+<div class="card">
+<div class="scroll"><table class="t">
+  <tr><th>#</th><th><%= t('name') %></th><th><%= t('pendingMonths') %></th><th><%= t('pendingAmount') %></th><% if (showFines) { %><th><%= t('fineSoFar') %></th><% } %></tr>
+  <% let ta = 0, tf = 0; list.forEach((p, i) => { ta += p.amount; tf += p.fine; %>
+  <tr><td><%= p.member.srNo %></td>
+    <td><%= mname(p.member) %><% if (me.role === 'admin') { %> <a class="small" href="/admin/members/<%= p.member._id %>">✎</a><% } %></td>
+    <td><% p.months.forEach(x => { %><span class="tag <%= x.late ? 'no' : 'soft' %>"><%= ml(x.month, true) %></span> <% }) %></td>
+    <td><b><%= money(p.amount) %></b></td>
+    <% if (showFines) { %><td><%= money(p.fine) %></td><% } %></tr>
+  <% }) %>
+  <tr class="totrow"><td></td><td><%= t('total') %> (<%= list.length %>)</td><td></td><td><%= money(ta) %></td><% if (showFines) { %><td><%= money(tf) %></td><% } %></tr>
+</table></div>
+</div>
+<% } %>
+<%- include('partials/foot') %>

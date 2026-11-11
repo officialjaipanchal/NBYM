@@ -1,0 +1,16 @@
+<%- include('partials/head', { title: t('allMembers') }) %>
+<h2 class="h"><%= t('allMembers') %> · <%= year.label %></h2>
+<div class="gridcards">
+<% groups.forEach(g => { const ms = members.filter(m => String(m.group) === String(g._id)); let tot = 0; %>
+  <div class="card">
+    <h3><%= lang === 'gu' && g.nameGu ? g.nameGu : g.name %></h3>
+    <table class="t small">
+    <% ms.forEach(m => { const s = byMember[String(m._id)] || { total: 0, count: 0 }; tot += s.total; %>
+      <tr class="<%= m.status !== 'active' ? 'dim' : '' %>"><td><%= mname(m) %></td><td><%= s.count %> <%= t('months') %></td><td class="r"><%= money(s.total) %></td></tr>
+    <% }) %>
+      <tr class="totrow"><td><%= t('total') %></td><td></td><td class="r"><%= money(tot) %></td></tr>
+    </table>
+  </div>
+<% }) %>
+</div>
+<%- include('partials/foot') %>
