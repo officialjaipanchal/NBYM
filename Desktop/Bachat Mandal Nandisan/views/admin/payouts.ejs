@@ -1,0 +1,75 @@
+<%- include('../partials/head', { title: t('payouts') }) %>
+<div class="pagehead">
+  <div><h2><%= t('payouts') %><%= year ? ' · ' + year.label : '' %></h2><p class="muted small"><%= t('payoutsHelp') %></p></div>
+  <div class="actions">
+    <% if (years.length > 1) { %><select onchange="location='/admin/payouts?year='+this.value"><% years.forEach(y => { %><option value="<%= y._id %>" <%= year && String(y._id) === String(year._id) ? 'selected' : '' %>><%= y.label %></option><% }) %></select><% } %>
+    <% if (list.length) { %><button type="button" class="btn ghost" data-share="#share-payouts" data-share-name="NBYM-payouts">📤 <%= t('shareImage') %></button><% } %>
+  </div>
+</div>
+<% if (!year) { %>
+  <div class="card center"><p><%= t('noClosedYear') %></p><a class="btn" href="/admin/year"><%= t('yearEnd') %></a></div>
+<% } else if (!list.length) { %>
+  <% const dep = year.summary && year.summary.totals ? year.summary.totals.deposits : null; %>
+  <div class="card center">
+    <p><%= t('noPayoutsYet') %></p>
+    <% if (dep === 0) { %><div class="flash warn"><%= t('payoutsNoneZero', { y: year.label }) %></div><p class="muted small"><%= t('payoutsReopenHint') %></p><a class="btn ghost" href="/admin/year#reopen"><%= t('reopenYear') %></a>
+    <% } else { %><form method="post" action="/admin/payouts/create"><input type="hidden" name="year" value="<%= year._id %>"><button class="btn"><%= t('createPayouts') %></button></form><% } %>
+  </div>
+<% } else { %>
+<div class="stats">
+  <div class="stat big"><span><%= t('ps_pending') %></span><b><%= money(totals.pending) %></b></div>
+  <div class="stat"><span><%= t('ps_paid') %></span><b><%= money(totals.paid) %></b></div>
+  <div class="stat"><span><%= t('ps_received') %></span><b><%= money(totals.received) %></b></div>
+  <div class="stat"><span><%= t('total') %> (<%= list.length %>)</span><b><%= money(totals.all) %></b></div>
+</div>
+<div class="tabs" role="tablist">
+  <% ['all', 'pending', 'paid', 'received'].forEach((f, i) => { %><button type="button" class="tab <%= i ? '' : 'on' %>" data-filter="<%= f %>"><%= f === 'all' ? t('all') : t('ps_' + f) %> (<%= f === 'all' ? list.length : list.filter(p => p.status === f).length %>)</button><% }) %>
+</div>
+<div class="gridcards" id="payoutlist">
+<% list.forEach(p => { const g = p.group || {}; const gname = lang === 'gu' && g.nameGu ? g.nameGu : g.name; const link = upiLink(g.upiId, g.upiName || g.name, Math.round(p.net), 'NBYM ' + year.label + ' payout'); %>
+  <div class="card payoutc <%= p.status %>" id="p<%= p._id %>" data-status="<%= p.status %>" data-s="<%= g.name %> <%= g.mobile || '' %>">
+    <div class="cardhead">
+      <div><h3><%= gname %></h3><div class="meta"><% if (g.mobile) { %><a href="tel:<%= g.mobile %>">📞 <%= g.mobile %></a><% } %></div></div>
+      <span class="tag <%= p.status === 'pending' ? 'no' : 'active' %>"><%= t('ps_' + p.status) %></span>
+    </div>
+    <div class="kv slim">
+      <span><%= t('deposited') %></span><b><%= money(p.deposited) %></b>
+      <span>+ <%= t('interestShare') %></span><b><%= money(p.dividend) %></b>
+      <span>− <%= t('nextMonthCut') %></span><b class="txt-bad"><%= money(p.nextDeduct) %></b>
+      <span>= <%= t('netToGive') %></span><b class="netv big"><%= money(p.net) %></b>
+    </div>
+    <details><summary class="small"><%= t('memberDetail') %> (<%= p.rows.length %>)</summary>
+      <table class="t small"><% p.rows.forEach(r => { %><tr><td><%= lang === 'gu' && r.nameGu ? r.nameGu : r.name %></td><td class="r"><%= money(r.deposited) %></td><td class="r">+<%= money(r.dividend) %></td><td class="r txt-bad"><%= r.nextDeduct ? '−' + money(r.nextDeduct) : '' %></td><td class="r"><b><%= money(r.net) %></b></td></tr><% }) %></table>
+    </details>
+    <% if (p.status === 'pending') { %>
+      <div class="paybox">
+        <div class="pb-main">
+          <% if (g.upiId) { %><div class="small"><%= g.upiName || '' %> <code class="copy" data-copy="<%= g.upiId %>"><%= g.upiId %></code></div><% } %>
+          <% if (link) { %><a class="btn upi" href="<%= link %>"><%= t('payByUpi', { a: money(p.net) }) %></a><% } else if (!g.upiQr) { %><div class="muted small"><%= t('noUpiYet') %></div><% } %>
+        </div>
+        <% if (g.upiQr) { %><img class="qr" src="<%= g.upiQr %>" alt="UPI QR"><% } %>
+      </div>
+      <details class="pop wide"><summary class="btn sm">✓ <%= t('markPaidOut') %></summary>
+        <form method="post" action="/admin/payouts/<%= p._id %>/paid" class="popbody col">
+          <label><%= t('date') %><input type="date" name="paidOn" value="<%= di(today) %>"></label>
+          <label><%= t('method') %><select name="method"><option value="upi">UPI</option><option value="cash"><%= t('cash') %></option></select></label>
+          <label><%= t('upiRef') %><input name="ref" placeholder="<%= t('optional') %>"></label>
+          <button class="btn"><%= t('save') %></button>
+        </form>
+      </details>
+    <% } else { %>
+      <div class="muted small"><%= t('ps_paid') %>: <%= dl(p.paidOn) %> · <%= p.method === 'cash' ? t('cash') : 'UPI' %><%= p.ref ? ' · ' + p.ref : '' %><% if (p.status === 'received') { %> · ✓ <%= t('ps_received') %> <%= dl(p.receivedOn) %><% } %></div>
+      <form method="post" action="/admin/payouts/<%= p._id %>/undo" data-confirm="<%= t('undo') %>?" class="mt8"><button class="btn ghost xs"><%= t('undo') %></button></form>
+    <% } %>
+  </div>
+<% }) %>
+</div>
+<script>
+document.querySelectorAll('.tab[data-filter]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('#payoutlist > .card').forEach(c => c.style.display = b.dataset.filter === 'all' || c.dataset.status === b.dataset.filter ? '' : 'none');
+}));
+</script>
+<%- include('../partials/share-payouts') %>
+<% } %>
+<%- include('../partials/foot') %>

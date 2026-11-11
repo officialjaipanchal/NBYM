@@ -1,0 +1,49 @@
+<%- include('../partials/head', { title: t('editRules') }) %>
+<a class="backlink" href="/rules">← <%= t('rules') %></a>
+<form method="post" action="/admin/rules" id="rulesform">
+<div class="pagehead">
+  <div><h2><%= t('editRules') %></h2><p class="muted small"><%= t('rulesHelp') %></p></div>
+  <div class="actions"><button type="button" class="btn ghost" onclick="addRule()">+ <%= t('addRule') %></button><button class="btn"><%= t('saveRules') %></button></div>
+</div>
+<div id="rulelist">
+<% rules.forEach((r, i) => { %>
+  <div class="card rulecard">
+    <div class="rulehead"><span class="rnum"><%= i + 1 %></span>
+      <div class="ruletools">
+        <button type="button" class="iconbtn" onclick="mv(this,-1)" title="<%= t('moveUp') %>" aria-label="<%= t('moveUp') %>">↑</button>
+        <button type="button" class="iconbtn" onclick="mv(this,1)" title="<%= t('moveDown') %>" aria-label="<%= t('moveDown') %>">↓</button>
+        <button type="button" class="iconbtn danger-text" onclick="rm(this)" title="<%= t('delete') %>" aria-label="<%= t('delete') %>">✕</button>
+      </div>
+    </div>
+    <label class="rl">ગુજરાતી<textarea name="gu" rows="3"><%= r.gu %></textarea></label>
+    <label class="rl">English<textarea name="en" rows="2"><%= r.en %></textarea></label>
+  </div>
+<% }) %>
+</div>
+<div class="formactions"><button type="button" class="btn ghost" onclick="addRule()">+ <%= t('addRule') %></button><button class="btn"><%= t('saveRules') %></button></div>
+</form>
+<div class="card dangerc">
+  <div class="cardhead"><div><h3><%= t('resetRules') %></h3><p class="muted small"><%= t('resetRulesHelp') %></p></div>
+  <form method="post" action="/admin/rules/reset" data-confirm="<%= t('resetRules') %>?"><button class="btn ghost danger-text"><%= t('resetRules') %></button></form></div>
+</div>
+<template id="ruletpl">
+  <div class="card rulecard">
+    <div class="rulehead"><span class="rnum"></span>
+      <div class="ruletools">
+        <button type="button" class="iconbtn" onclick="mv(this,-1)" aria-label="<%= t('moveUp') %>">↑</button>
+        <button type="button" class="iconbtn" onclick="mv(this,1)" aria-label="<%= t('moveDown') %>">↓</button>
+        <button type="button" class="iconbtn danger-text" onclick="rm(this)" aria-label="<%= t('delete') %>">✕</button>
+      </div>
+    </div>
+    <label class="rl">ગુજરાતી<textarea name="gu" rows="3"></textarea></label>
+    <label class="rl">English<textarea name="en" rows="2"></textarea></label>
+  </div>
+</template>
+<script>
+const list = document.getElementById('rulelist');
+function renum() { list.querySelectorAll('.rnum').forEach((n, i) => n.textContent = i + 1); }
+function mv(b, d) { const c = b.closest('.rulecard'); const o = d < 0 ? c.previousElementSibling : c.nextElementSibling; if (!o) return; d < 0 ? list.insertBefore(c, o) : list.insertBefore(o, c); renum(); c.scrollIntoView({ block: 'nearest' }); }
+function rm(b) { const c = b.closest('.rulecard'); if (c.querySelector('textarea').value.trim() && !confirm(<%- JSON.stringify(t('confirmDelete')) %>)) return; c.remove(); renum(); }
+function addRule() { list.appendChild(document.getElementById('ruletpl').content.cloneNode(true)); renum(); const last = list.lastElementChild; last.scrollIntoView({ behavior: 'smooth', block: 'center' }); last.querySelector('textarea').focus(); }
+</script>
+<%- include('../partials/foot') %>

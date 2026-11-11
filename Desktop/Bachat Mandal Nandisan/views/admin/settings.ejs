@@ -1,6 +1,6 @@
 <%- include('../partials/head', { title: t('settings') }) %>
-<h2 class="h"><%= t('settings') %></h2>
 <form method="post">
+<div class="pagehead"><div><h2><%= t('settings') %></h2></div><div class="actions"><button class="btn"><%= t('saveSettings') %></button></div></div>
 <div class="card">
   <h3><%= t('settingsMoney') %></h3>
   <div class="stack two">
@@ -20,6 +20,23 @@
   <p class="muted small"><%= lang === 'gu' ? 'વ્યાજ દરનો ફેરફાર નવી લોન પર લાગુ થશે; જૂની લોન તેના દરે જ ચાલશે.' : 'Rate changes apply to new loans; existing loans keep their own rate.' %></p>
 </div>
 <div class="card">
+  <h3>💳 <%= t('mandalUpi') %></h3>
+  <p class="muted small"><%= t('mandalUpiHelp') %></p>
+  <div class="stack two">
+    <label><%= t('upiId') %><input name="mandalUpiId" value="<%= settings.mandalUpiId || '' %>" placeholder="name@okaxis" autocapitalize="off" spellcheck="false"></label>
+    <label><%= t('upiName') %><input name="mandalUpiName" value="<%= settings.mandalUpiName || '' %>"></label>
+  </div>
+  <div class="qrpick">
+    <img class="qr" data-preview src="<%= settings.mandalUpiQr || '' %>" alt="" <%= settings.mandalUpiQr ? '' : 'hidden' %>>
+    <div>
+      <label class="btn ghost"><input type="file" accept="image/*" data-qr-input hidden> <%= settings.mandalUpiQr ? t('changeQr') : t('uploadQr') %></label>
+      <input type="hidden" name="mandalUpiQr" data-qr-out>
+      <% if (settings.mandalUpiQr) { %><label class="chk small"><input type="checkbox" name="removeMandalQr"> <%= t('removeQr') %></label><% } %>
+      <p class="muted small"><%= t('qrHelp') %></p>
+    </div>
+  </div>
+</div>
+<div class="card">
   <h3><%= t('permissions') %></h3>
   <div class="checks">
   <% Object.keys(settings.perm.toObject ? settings.perm.toObject() : settings.perm).forEach(k => { %>
@@ -28,6 +45,6 @@
   </div>
   <div class="flash warn small">🔒 <%= t('permNote') %></div>
 </div>
-<button class="btn"><%= t('save') %></button>
+<div class="formactions"><button class="btn"><%= t('saveSettings') %></button></div>
 </form>
 <%- include('../partials/foot') %>

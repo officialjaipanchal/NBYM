@@ -1,12 +1,15 @@
 <%- include('../partials/head', { title: t('loans') }) %>
-<h2 class="h">🔒 <%= t('loans') %></h2>
-<p class="muted small"><%= t('loanPrivate') %></p>
+<div class="pagehead">
+  <div><h2>🔒 <%= t('loans') %></h2><p class="muted small"><%= t('loanPrivate') %></p></div>
+  <div class="actions"><a class="btn" href="#new">+ <%= t('newLoan') %></a></div>
+</div>
 <div class="stats">
   <div class="stat big"><span><%= t('currentBalance') %></span><b><%= money(totals.cash) %></b></div>
   <div class="stat"><span><%= t('totalLent') %></span><b><%= money(totals.outstanding) %></b></div>
   <div class="stat"><span><%= t('interestAccrued') %></span><b><%= money(totals.interestAccrued) %></b></div>
   <div class="stat"><span><%= t('interestIn') %></span><b><%= money(totals.interestIn) %></b></div>
 </div>
+<%- include('loanqueue') %>
 <div class="card">
 <% if (!rows.length) { %><p class="muted"><%= t('noLoans') %></p><% } else { %>
 <div class="scroll"><table class="t">
@@ -33,7 +36,7 @@
     <label><%= t('rate') %><span class="formrow tight"><input name="rate" type="number" step="0.01" value="<%= settings.interestRate %>" style="max-width:6em">%
       <select name="ratePeriod"><option value="monthly" <%= settings.interestPeriod === 'monthly' ? 'selected' : '' %>><%= t('perMonth') %></option><option value="yearly" <%= settings.interestPeriod === 'yearly' ? 'selected' : '' %>><%= t('perYear') %></option></select></span></label>
     <label class="full"><%= t('reason') %><input name="reason"></label>
-    <div><button class="btn"><%= t('newLoan') %></button></div>
+    <div class="formactions"><button class="btn"><%= t('newLoan') %></button></div>
   </form>
 </div>
 <%- include('../partials/foot') %>

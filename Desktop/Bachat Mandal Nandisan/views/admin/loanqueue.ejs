@@ -1,0 +1,31 @@
+<div class="card queuec" id="queue">
+  <div class="cardhead"><div><h3>🏦 <%= t('lrAdminTitle') %> (<%= lq.length %>)</h3><p class="muted small"><%= t('lrAdminHelp') %></p></div></div>
+  <% if (!lq.length) { %><p class="muted"><%= t('lrNone') %></p><% } %>
+  <% let cum = 0; lq.forEach((r, i) => { cum += r.amount; const fund = cum <= totals.cash; const gOk = r.guarantors.every(g => g.status === 'accepted'); %>
+  <div class="qrow <%= i === 0 ? 'first' : '' %>">
+    <div class="qnum big">#<%= i + 1 %></div>
+    <div class="q-main">
+      <div><b><%= mname(r.borrower) %></b> <% if (r.group && String(r.group.head) !== String(r.borrower._id)) { %><span class="muted small">(<%= lang === 'gu' && r.group.nameGu ? r.group.nameGu : r.group.name %> <%= t('forFamily') %>)</span><% } %> · <b><%= money(r.amount) %></b></div>
+      <div class="small muted"><%= t('lrApplied') %> <%= dl(r.createdAt) %> <%= new Date(r.createdAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) %><%= r.reason ? ' · ' + r.reason : '' %></div>
+      <div class="small"><%- include('../partials/guarchips', { gl: r.guarantors }) %></div>
+      <div class="small <%= fund ? 'txt-ok' : 'txt-bad' %>"><%= fund ? '✓ ' + t('lrFundable') : '✕ ' + t('lrNotFundable', { a: money(cum - totals.cash) }) %></div>
+    </div>
+    <div class="q-act">
+      <details class="pop"><summary class="btn ghost xs"><%= t('reject') %></summary>
+        <form method="post" action="/admin/loan-requests/<%= r._id %>/reject" class="popbody"><input name="note" placeholder="<%= t('rejectReason') %>"><button class="btn sm danger"><%= t('reject') %></button></form>
+      </details>
+      <details class="pop"><summary class="btn sm">✓ <%= t('lrGive') %></summary>
+        <form method="post" action="/admin/loan-requests/<%= r._id %>/approve" class="popbody col">
+          <% if (!gOk) { %><div class="flash warn small"><%= t('lrGuarPending') %></div><% } %>
+          <% if (i > 0) { %><div class="flash warn small"><%= t('lrSkipWarn', { n: i }) %></div>
+            <input type="hidden" name="skipped" value="1"><label><%= t('lrSkipReason') %><input name="skipReason" required></label><% } %>
+          <label><%= t('loanAmount') %><input type="number" name="amount" value="<%= r.amount %>" max="<%= settings.maxLoan %>"></label>
+          <label><%= t('loanDate') %><input type="date" name="date" value="<%= di(today) %>"></label>
+          <label><%= t('note') %><input name="note"></label>
+          <button class="btn"><%= t('lrGive') %></button>
+        </form>
+      </details>
+    </div>
+  </div>
+  <% }) %>
+</div>

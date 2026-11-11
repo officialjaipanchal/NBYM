@@ -18,6 +18,16 @@ const SettingsSchema = new Schema({
   maxLoan: { type: Number, default: 25000 },           // Rule 11
   insuranceAmount: { type: Number, default: 100 },     // Rule 22
   currentYear: { type: Schema.Types.ObjectId, ref: 'Year' },
+  mandalUpiId: String,   // where members pay the monthly saving
+  mandalUpiName: String,
+  mandalUpiQr: String,
+  vapidPublic: String,   // web-push keys, created automatically on first use
+  vapidPrivate: String,
+  autoReminders: { type: Boolean, default: true },
+  reminderDays: { type: [Number], default: [8, 11] }, // days of month for automatic payment reminders
+  remindersSentOn: String, // YYYY-MM-DD guard so the cron sends once per day
+  rules: [{ gu: String, en: String, _id: false }], // editable rule book (empty = original printed rules)
+  rulesUpdatedAt: Date,
   // What a normal (group) user is allowed to see
   perm: {
     showBalance: { type: Boolean, default: true },
@@ -47,6 +57,9 @@ const GroupSchema = new Schema({
   mobile: String,
   head: { type: Schema.Types.ObjectId, ref: 'Member' },
   order: { type: Number, default: 0 },
+  upiId: String,     // family's UPI ID for year-end payouts
+  upiName: String,   // name on the UPI account
+  upiQr: String,     // QR image (data URL, resized on the phone)
 }, { timestamps: true });
 
 // ---------- Member (each pays 500 separately, Rule 3) ----------
@@ -139,6 +152,62 @@ const SahaySchema = new Schema({
   note: String,
 }, { timestamps: true });
 
+// ---------- Phone notification subscriptions (web push) ----------
+const PushSubSchema = new Schema({
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  group: { type: Schema.Types.ObjectId, ref: 'Group' },
+  role: String,
+  lang: { type: String, default: 'gu' },
+  endpoint: { type: String, required: true, unique: true },
+  keys: { p256dh: String, auth: String },
+  ua: String,
+}, { timestamps: true });
+
+// ---------- "I have paid" claims from families (admin approves) ----------
+const PayClaimSchema = new Schema({
+  year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
+  group: { type: Schema.Types.ObjectId, ref: 'Group', required: true },
+  user: { type: Schema.Types.ObjectId, ref: 'User' },
+  items: [{ member: { type: Schema.Types.ObjectId, ref: 'Member' }, month: String, _id: false }],
+  amount: Number,
+  paidOn: Date,
+  ref: String,   // UPI reference / UTR
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  decidedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+  decidedAt: Date,
+  reason: String,
+}, { timestamps: true });
+
+// ---------- Year-end payout to each family (savings + interest − next month) ----------
+const PayoutSchema = new Schema({
+  year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
+  group: { type: Schema.Types.ObjectId, ref: 'Group', required: true },
+  deposited: Number, dividend: Number, payout: Number, nextDeduct: Number, net: Number,
+  rows: [{ name: String, nameGu: String, deposited: Number, dividend: Number, nextDeduct: Number, net: Number, eligible: Boolean, _id: false }],
+  status: { type: String, enum: ['pending', 'paid', 'received'], default: 'pending' },
+  paidOn: Date, method: String, ref: String, paidBy: { type: Schema.Types.ObjectId, ref: 'User' },
+  receivedOn: Date, receivedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+}, { timestamps: true });
+PayoutSchema.index({ year: 1, group: 1 }, { unique: true });
+
+// ---------- Loan request queue (first come, first served — Rule 8) ----------
+const LoanRequestSchema = new Schema({
+  group: { type: Schema.Types.ObjectId, ref: 'Group', required: true },
+  user: { type: Schema.Types.ObjectId, ref: 'User' },
+  borrower: { type: Schema.Types.ObjectId, ref: 'Member', required: true },
+  amount: { type: Number, required: true },
+  reason: String,
+  guarantors: [{
+    member: { type: Schema.Types.ObjectId, ref: 'Member' },
+    status: { type: String, enum: ['asked', 'accepted', 'declined'], default: 'asked' },
+    at: Date, _id: false,
+  }],
+  status: { type: String, enum: ['waiting', 'approved', 'rejected', 'cancelled'], default: 'waiting' },
+  decidedAt: Date, decidedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+  note: String,
+  loan: { type: Schema.Types.ObjectId, ref: 'Loan' },
+}, { timestamps: true }); // createdAt = place in the queue
+
 // ---------- Audit log ----------
 const AuditSchema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -159,4 +228,8 @@ module.exports = {
   Ledger: mongoose.model('Ledger', LedgerSchema),
   Audit: mongoose.model('Audit', AuditSchema),
   Sahay: mongoose.model('Sahay', SahaySchema),
+  PushSub: mongoose.model('PushSub', PushSubSchema),
+  PayClaim: mongoose.model('PayClaim', PayClaimSchema),
+  Payout: mongoose.model('Payout', PayoutSchema),
+  LoanRequest: mongoose.model('LoanRequest', LoanRequestSchema),
 };

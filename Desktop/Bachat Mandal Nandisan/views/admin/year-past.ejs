@@ -1,5 +1,7 @@
 <%- include('../partials/head', { title: year.label }) %>
-<p><a href="/admin/year">← <%= t('yearEnd') %></a></p>
-<h2 class="h"><%= t('yearSummary') %> · <%= year.label %> (<%= t('closed') %> <%= dl(year.closedAt) %>)</h2>
+<a class="backlink" href="/admin/year">← <%= t('yearEnd') %></a>
+<div class="pagehead"><div><h2><%= t('yearSummary') %> · <%= year.label %></h2><p class="muted small"><%= t('closed') %> <%= dl(year.closedAt) %></p></div>
+<div class="actions"><% if (summary.families) { %><button type="button" class="btn ghost" data-share="#share-settlement" data-share-name="NBYM-year-end">📤 <%= t('shareImage') %></button><% } %><a class="btn" href="/admin/payouts?year=<%= year._id %>"><%= t('payouts') %></a></div></div>
 <%- include('partials-summary') %>
+<% if (summary.families) { %><%- include('../partials/share-settlement') %><% } %>
 <%- include('../partials/foot') %>

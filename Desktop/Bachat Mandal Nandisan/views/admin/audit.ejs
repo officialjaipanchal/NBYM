@@ -1,5 +1,5 @@
 <%- include('../partials/head', { title: t('audit') }) %>
-<h2 class="h"><%= t('audit') %></h2>
+<div class="pagehead"><div><h2><%= t('audit') %></h2><p class="muted small"><%= t('auditNote') %></p></div></div>
 <div class="card"><div class="scroll"><table class="t small">
   <tr><th><%= t('when') %></th><th><%= t('username') %></th><th><%= t('action') %></th><th><%= t('details') %></th></tr>
   <% logs.forEach(l => { %><tr><td><%= new Date(l.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) %></td><td><%= l.username %></td><td><code><%= l.action %></code></td><td><%= l.details %></td></tr><% }) %>

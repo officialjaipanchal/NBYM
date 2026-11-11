@@ -1,0 +1,36 @@
+<%- include('../partials/head', { title: t('notify') }) %>
+<div class="pagehead">
+  <div><h2>🔔 <%= t('notify') %></h2><p class="muted small"><%= t('notifyHelp') %></p></div>
+</div>
+<div class="stats">
+  <div class="stat big"><span><%= t('pushFamilies') %></span><b><%= familyCount %> / <%= locals.groupsTotal || '' %></b></div>
+  <div class="stat"><span><%= t('pushDevices') %></span><b><%= devices %></b></div>
+  <div class="stat"><span><%= t('pushPendingReach') %></span><b><%= reachablePending %> / <%= pendingFamilies %></b></div>
+</div>
+<%- include('../partials/pushcard') %>
+<div class="split">
+  <div class="card">
+    <h3><%= t('pushReminderNow') %></h3>
+    <p class="muted small"><%= t('pushReminderNowHelp', { n: reachablePending }) %></p>
+    <form method="post" action="/admin/notify"><input type="hidden" name="audience" value="pending">
+      <div class="formactions"><button class="btn" <%= reachablePending ? '' : 'disabled' %>><%= t('pushReminderSend') %></button></div>
+    </form>
+    <hr class="sep">
+    <h3><%= t('pushAuto') %></h3>
+    <form method="post" action="/admin/notify/settings" class="stack">
+      <label class="chk"><input type="checkbox" name="autoReminders" <%= settings.autoReminders ? 'checked' : '' %>> <%= t('pushAutoOn') %></label>
+      <label><%= t('pushAutoDays') %><input name="reminderDays" value="<%= (settings.reminderDays || []).join(', ') %>" placeholder="8, 11" inputmode="numeric"></label>
+      <div class="formactions"><span class="muted small grow"><%= t('pushAutoHelp') %></span><button class="btn ghost"><%= t('save') %></button></div>
+    </form>
+  </div>
+  <div class="card">
+    <h3><%= t('pushNotice') %></h3>
+    <form method="post" action="/admin/notify" class="stack">
+      <label><%= t('pushAudience') %><select name="audience"><option value="all"><%= t('pushAll') %></option><option value="admins"><%= t('pushAdmins') %></option></select></label>
+      <label><%= t('pushNoticeTitle') %><input name="title" maxlength="80" placeholder="NBYM"></label>
+      <label><%= t('pushNoticeBody') %><textarea name="body" rows="4" maxlength="300" required placeholder="<%= t('pushNoticeExample') %>"></textarea></label>
+      <div class="formactions"><button class="btn"><%= t('pushNoticeSend') %></button></div>
+    </form>
+  </div>
+</div>
+<%- include('../partials/foot') %>

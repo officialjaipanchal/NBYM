@@ -1,6 +1,7 @@
 <%- include('partials/head', { title: t('home') }) %>
-<h2 class="h"><%= t('welcome') %>, <%= lang === 'gu' && group.nameGu ? group.nameGu : group.name %> <%= t('forFamily') %></h2>
-<p class="muted small"><%= t('year') %> <%= year.label %><% if (year.startDate) { %> (<%= t('bestaVarsh') %> <%= dl(year.startDate) %>)<% } %> · <%= t('dueBy', { d: settings.dueDay }) %> · <%= money(settings.monthlyAmount) %> <%= t('perMember') %></p>
+<div class="pagehead"><div><h2><%= t('welcome') %>, <%= lang === 'gu' && group.nameGu ? group.nameGu : group.name %> <%= t('forFamily') %></h2>
+<p class="muted small"><%= t('year') %> <%= year.label %><% if (year.startDate) { %> (<%= t('bestaVarsh') %> <%= dl(year.startDate) %>)<% } %> · <%= t('dueBy', { d: settings.dueDay }) %> · <%= money(settings.monthlyAmount) %> <%= t('perMember') %></p></div></div>
+<%- include('partials/pushcard') %>
 
 <% if (totals) { %><%- include('partials/stats', { showBal: settings.perm.showBalance, showLent: settings.perm.showTotalLent }) %><% } %>
 
@@ -30,9 +31,10 @@
   <p class="small muted"><%= x.owe.map(mname).join(', ') %> · <a href="/sahay/<%= x.s._id %>"><%= t('view') %></a></p>
 </div>
 <% }) %>
-<% if (settlement) { %>
-<div class="card settlec">
-  <h3><%= t('lastSettlement') %> · <%= lastYear.label %></h3>
+<% if (settlement) { const P = payout; %>
+<div class="card settlec" id="payout">
+  <div class="cardhead"><h3><%= t('lastSettlement') %> · <%= lastYear.label %></h3>
+    <% if (P) { %><span class="tag <%= P.status === 'pending' ? 'no' : 'active' %>"><%= t('ps_' + P.status) %></span><% } %></div>
   <div class="kv">
     <span><%= t('deposited') %></span><b><%= money(settlement.deposited) %></b>
     <span>+ <%= t('interestShare') %></span><b><%= money(settlement.dividend) %></b>
@@ -41,22 +43,65 @@
     <span>= <%= t('netToGive') %></span><b class="netv"><%= money(settlement.net) %></b>
   </div>
   <details><summary class="small"><%= t('memberDetail') %></summary>
-    <table class="t small"><% settlementRows.forEach(r => { %><tr><td><%= lang === 'gu' && r.nameGu ? r.nameGu : r.name %></td><td class="r"><%= money(r.payout) %></td><td class="r txt-bad"><%= r.nextDeduct ? '−' + money(r.nextDeduct) : '' %></td><td class="r"><b><%= money(r.net ?? r.payout) %></b></td></tr><% }) %></table>
+    <table class="t small"><tr><th><%= t('name') %></th><th class="r"><%= t('deposited') %></th><th class="r"><%= t('interestShare') %></th><th class="r">−</th><th class="r"><%= t('netToGive') %></th></tr>
+    <% settlementRows.forEach(r => { %><tr><td><%= lang === 'gu' && r.nameGu ? r.nameGu : r.name %></td><td class="r"><%= money(r.deposited) %></td><td class="r"><%= money(r.dividend) %></td><td class="r txt-bad"><%= r.nextDeduct ? money(r.nextDeduct) : '' %></td><td class="r"><b><%= money(r.net ?? r.payout) %></b></td></tr><% }) %></table>
   </details>
+  <% if (P && P.status === 'paid') { %>
+    <div class="paybox ok"><div class="pb-main"><b><%= t('payoutSentToYou', { a: money(P.net) }) %></b><div class="muted small"><%= dl(P.paidOn) %> · <%= P.method === 'cash' ? t('cash') : 'UPI' %><%= P.ref ? ' · ' + P.ref : '' %></div></div>
+      <form method="post" action="/my/payouts/<%= P._id %>/received"><button class="btn"><%= t('confirmReceived') %></button></form></div>
+  <% } else if (P && P.status === 'received') { %>
+    <p class="muted small">✓ <%= t('youConfirmed') %> <%= dl(P.receivedOn) %></p>
+  <% } else if (P && !group.upiId && !group.upiQr) { %>
+    <div class="flash warn small"><%= t('addUpiForPayout') %> <a href="#upi"><%= t('addUpi') %></a></div>
+  <% } %>
 </div>
 <% } %>
 
 <% if (myPending.length) { %>
-<div class="card warnc">
-  <h3><%= t('pending') %></h3>
+<div class="card warnc" id="pay">
+  <div class="cardhead"><h3><%= t('pending') %></h3><b class="amt"><%= money(dueTotal) %></b></div>
   <% myPending.forEach(p => { %>
     <div class="row between pend"><span><%= mname(p.member) %> — <%= p.months.map(x => ml(x.month, true)).join(', ') %></span><b><%= money(p.amount) %><% if (p.fine) { %> + <%= money(p.fine) %> <%= t('fines') %><% } %></b></div>
   <% }) %>
+  <% if (settings.mandalUpiId || settings.mandalUpiQr) { %>
+  <div class="paybox">
+    <div class="pb-main">
+      <b><%= t('payToMandal') %></b>
+      <div class="muted small"><%= settings.mandalUpiName || '' %> <% if (settings.mandalUpiId) { %><code class="copy" data-copy="<%= settings.mandalUpiId %>"><%= settings.mandalUpiId %></code><% } %></div>
+      <% if (payLink) { %><a class="btn upi" href="<%= payLink %>"><%= t('payByUpi', { a: money(dueTotal) }) %></a><% } %>
+      <p class="muted small"><%= t('payUpiHelp') %></p>
+    </div>
+    <% if (settings.mandalUpiQr) { %><img class="qr" src="<%= settings.mandalUpiQr %>" alt="UPI QR"><% } %>
+  </div>
+  <% } %>
+  <details class="claim"><summary class="btn ghost"><%= t('iPaid') %></summary>
+    <form method="post" action="/my/claim" class="stack">
+      <p class="muted small"><%= t('iPaidHelp') %></p>
+      <div class="checks">
+      <% myPending.forEach(p => { p.months.forEach(x => { const k = p.member._id + '|' + x.month; if (claimedKeys.has(k)) return; %>
+        <label class="chk"><input type="checkbox" name="item" value="<%= k %>" checked> <%= mname(p.member) %> — <%= ml(x.month) %> (<%= money(settings.monthlyAmount) %>)</label>
+      <% }) }) %>
+      </div>
+      <div class="stack two">
+        <label><%= t('paidOn') %><input type="date" name="paidOn" value="<%= di(new Date()) %>"></label>
+        <label><%= t('upiRef') %><input name="ref" maxlength="40" placeholder="<%= t('optional') %>"></label>
+      </div>
+      <div class="formactions"><button class="btn"><%= t('sendForApproval') %></button></div>
+    </form>
+  </details>
 </div>
 <% } %>
+<% myClaims.forEach(c => { %>
+<div class="card claimc <%= c.status %>">
+  <div class="cardhead"><div><b><%= c.status === 'pending' ? '⏳ ' + t('claimWaiting') : '✕ ' + t('claimRejected') %></b>
+    <div class="muted small"><%= money(c.amount) %> · <%= c.items.length %> <%= t('installments') %> · <%= dl(c.paidOn) %><%= c.ref ? ' · ' + c.ref : '' %><%= c.reason ? ' · ' + c.reason : '' %></div></div>
+    <% if (c.status === 'pending') { %><form method="post" action="/my/claim/<%= c._id %>/cancel"><button class="btn ghost xs"><%= t('cancel') %></button></form><% } %></div>
+</div>
+<% }) %>
 
+<%- include('partials/loanreq-user') %>
 <% if (myLoans.length) { %>
-<div class="card"><h3>🔒 <%= t('myLoans') %></h3><p class="muted small"><%= t('loanPrivate') %></p>
+<div class="card" id="myloans"><h3>🔒 <%= t('myLoans') %></h3><p class="muted small"><%= t('loanPrivate') %></p>
   <% myLoans.forEach(x => { %><%- include('partials/loancard', { loan: x.loan, st: x.st }) %><% }) %>
 </div>
 <% } %>
@@ -67,6 +112,25 @@
 <% } %>
 
 <% if (allPendingCount !== null) { %>
-  <p><a class="btn ghost" href="/pending"><%= t('pendingNow') %> (<%= allPendingCount %>)</a></p>
+  <div class="formactions"><a class="btn ghost" href="/pending"><%= t('pendingNow') %> (<%= allPendingCount %>)</a></div>
 <% } %>
+<div class="card" id="upi">
+  <div class="cardhead"><div><h3>💳 <%= t('myUpi') %></h3><p class="muted small"><%= t('myUpiHelp') %></p></div></div>
+  <form method="post" action="/my/upi" class="upiform">
+    <div class="stack two">
+      <label><%= t('upiId') %><input name="upiId" value="<%= group.upiId || '' %>" placeholder="name@okaxis" autocapitalize="off" autocomplete="off" spellcheck="false"></label>
+      <label><%= t('upiName') %><input name="upiName" value="<%= group.upiName || '' %>"></label>
+    </div>
+    <div class="qrpick">
+      <img class="qr" data-preview src="<%= group.upiQr || '' %>" alt="" <%= group.upiQr ? '' : 'hidden' %>>
+      <div>
+        <label class="btn ghost"><input type="file" accept="image/*" data-qr-input hidden> <%= group.upiQr ? t('changeQr') : t('uploadQr') %></label>
+        <input type="hidden" name="upiQr" data-qr-out>
+        <% if (group.upiQr) { %><label class="chk small"><input type="checkbox" name="removeQr"> <%= t('removeQr') %></label><% } %>
+        <p class="muted small"><%= t('qrHelp') %></p>
+      </div>
+    </div>
+    <div class="formactions"><button class="btn"><%= t('saveUpi') %></button></div>
+  </form>
+</div>
 <%- include('partials/foot') %>

@@ -1,13 +1,14 @@
 <%- include('../partials/head', { title: t('ledger') }) %>
-<h2 class="h"><%= t('ledger') %> · <%= year.label %></h2>
+<div class="pagehead"><div><h2><%= t('ledger') %></h2><p class="muted small"><%= t('year') %> <%= year.label %></p></div></div>
 <div class="card">
-  <form method="post" class="formrow">
-    <input type="date" name="date" value="<%= di(today) %>" required>
-    <select name="type"><option value="in"><%= t('income') %></option><option value="out"><%= t('expense') %></option></select>
-    <select name="category"><% ['expense', 'dividend', 'refund', 'other'].forEach(c => { %><option value="<%= c %>"><%= t('cat_' + c) %></option><% }) %></select>
-    <input type="number" name="amount" min="1" step="0.01" placeholder="<%= t('amount') %>" required>
-    <input name="note" placeholder="<%= t('note') %>">
-    <button class="btn"><%= t('add') %></button>
+  <h3><%= t('addEntry') %></h3>
+  <form method="post" class="stack three">
+    <label><%= t('date') %><input type="date" name="date" value="<%= di(today) %>" required></label>
+    <label><%= t('type') %><select name="type"><option value="in"><%= t('income') %></option><option value="out"><%= t('expense') %></option></select></label>
+    <label><%= t('category') %><select name="category"><% ['expense', 'dividend', 'refund', 'other'].forEach(c => { %><option value="<%= c %>"><%= t('cat_' + c) %></option><% }) %></select></label>
+    <label><%= t('amount') %><input type="number" name="amount" min="1" step="0.01" inputmode="decimal" required></label>
+    <label class="span2"><%= t('note') %><input name="note"></label>
+    <div class="formactions"><button class="btn"><%= t('addEntry') %></button></div>
   </form>
 </div>
 <div class="card">
@@ -15,7 +16,7 @@
     <tr><th><%= t('date') %></th><th><%= t('type') %></th><th><%= t('category') %></th><th class="r"><%= t('amount') %></th><th><%= t('note') %></th><th></th></tr>
     <% entries.forEach(e => { %>
     <tr><td><%= dl(e.date) %></td><td><span class="tag <%= e.type === 'in' ? 'active' : 'no' %>"><%= t(e.type === 'in' ? 'income' : 'expense') %></span></td><td><%= t('cat_' + e.category) %></td><td class="r"><%= money(e.amount) %></td><td><%= e.note || '' %></td>
-    <td><form method="post" action="/admin/ledger/<%= e._id %>/delete" data-confirm="<%= t('confirmDelete') %>"><button class="link small"><%= t('delete') %></button></form></td></tr>
+    <td class="r act"><form method="post" action="/admin/ledger/<%= e._id %>/delete" data-confirm="<%= t('confirmDelete') %>"><button class="iconbtn" title="<%= t('delete') %>" aria-label="<%= t('delete') %>">✕</button></form></td></tr>
     <% }) %>
   </table>
 </div>

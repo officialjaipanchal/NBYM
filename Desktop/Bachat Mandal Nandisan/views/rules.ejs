@@ -1,8 +1,11 @@
 <%- include('partials/head', { title: t('rules') }) %>
-<div class="card">
-  <h2><%= t('rules') %></h2>
+<div class="pagehead">
+  <div><h2><%= t('rules') %></h2><p class="muted small"><%= rules.length %> <%= t('rulesCount') %><% if (updatedAt) { %> · <%= t('lastUpdated') %> <%= dl(updatedAt) %><% } %></p></div>
+  <% if (me.role === 'admin') { %><div class="actions"><a class="btn" href="/admin/rules">✎ <%= t('editRules') %></a></div><% } %>
+</div>
+<div class="card ledger">
   <ol class="rules">
-    <% rules.forEach(r => { %><li><div><%= r.gu %></div><% if (lang === 'en') { %><div class="muted"><%= r.en %></div><% } %></li><% }) %>
+    <% rules.forEach(r => { %><li><div><%= lang === 'en' && r.en ? r.en : (r.gu || r.en) %></div><% if (lang === 'en' && r.en && r.gu) { %><div class="muted small"><%= r.gu %></div><% } %></li><% }) %>
   </ol>
 </div>
 <%- include('partials/foot') %>

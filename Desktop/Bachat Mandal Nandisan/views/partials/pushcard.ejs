@@ -1,0 +1,9 @@
+<div class="card pushcard" id="pushcard" data-state="na" data-t="<%= JSON.stringify({ isOn: t('pushIsOn'), isOff: t('pushIsOff'), blocked: t('pushBlocked'), unsupported: t('pushUnsupported'), ios: t('pushIOS'), error: t('pushError') }) %>">
+  <div class="pc-icon" aria-hidden="true">🔔</div>
+  <div class="pc-text"><b><%= t('pushTitle') %></b><div class="pmsg muted small"><%= t('pushIsOff') %></div></div>
+  <div class="pc-actions">
+    <button type="button" class="btn pon" hidden><%= t('pushTurnOn') %></button>
+    <button type="button" class="btn ghost xs ptest" hidden><%= t('pushTest') %></button>
+    <button type="button" class="btn ghost xs poff" hidden><%= t('pushTurnOff') %></button>
+  </div>
+</div>

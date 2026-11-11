@@ -1,0 +1,8 @@
+<template id="share-payouts"><div class="sharecard">
+  <%- include('share-head', { stitle: t('payouts') + ' · ' + year.label }) %>
+  <table class="sc-t">
+    <% list.forEach(p => { const g = p.group || {}; %><tr><td><%= lang === 'gu' && g.nameGu ? g.nameGu : g.name %></td><td class="r"><b><%= money(p.net) %></b></td><td class="r"><span class="sc-st <%= p.status %>"><%= p.status === 'pending' ? '⏳' : '✓' %> <%= t('ps_' + p.status) %></span></td></tr><% }) %>
+    <tr class="sc-tot"><td><%= t('total') %></td><td class="r"><%= money(totals.all) %></td><td></td></tr>
+  </table>
+  <div class="sc-foot">⏳ <%= t('ps_pending') %> <%= money(totals.pending) %> · ✓ <%= t('ps_paid') %> <%= money(totals.paid + totals.received) %></div>
+</div></template>

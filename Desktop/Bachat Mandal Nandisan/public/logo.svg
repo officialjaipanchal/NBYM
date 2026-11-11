@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="NBYM">
+  <rect width="64" height="64" rx="14" fill="#1d2b4f"/>
+  <!-- kumkum ledger rule -->
+  <rect x="10" y="53.5" width="44" height="2.2" rx="1.1" fill="#d23a2f"/>
+  <!-- carpenter's set-square (Vishwakarma / Panchal craft) -->
+  <path d="M12 10.5h8.5v29h29v8.5H14a2 2 0 0 1-2-2z" fill="#e3a51a"/>
+  <g stroke="#1d2b4f" stroke-width="1.6" stroke-linecap="round">
+    <path d="M27 40v3.2M33 40v4.6M39 40v3.2M45 40v4.6"/>
+    <path d="M20.5 18h-3.2M20.5 24h-4.6M20.5 30h-3.2"/>
+  </g>
+  <!-- savings coin -->
+  <circle cx="38.5" cy="23" r="11" fill="#e3a51a"/>
+  <circle cx="38.5" cy="23" r="7.6" fill="none" stroke="#1d2b4f" stroke-width="1.8"/>
+  <path d="M34.8 18.4h7.6M34.8 21.3h7.6M35.6 18.4h1.6c2.4 0 3.6 1.2 3.6 2.9s-1.2 2.9-3.6 2.9h-1.6l5.4 4.4" fill="none" stroke="#1d2b4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

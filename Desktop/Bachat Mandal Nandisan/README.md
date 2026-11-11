@@ -37,9 +37,19 @@ Borrower names are never shown to other users. This is enforced on the server, n
 - Rule 6: Diwali-to-Diwali year. **Year accounts → Close year** saves a summary and starts a fresh year (it is blocked while loans are active, Rule 15)
 - Rule 22: record insurance collections under **Other income/expense**
 
-## Deploy
-Any Node host works (Render, Railway, a VPS). Set the same variables as `.env`, and set `COOKIE_SECURE=true` on HTTPS.
-In MongoDB Atlas → Network Access, allow the server's IP.
+## Deploy on Vercel
+The project has `api/index.js` + `vercel.json`, so Vercel runs the whole app as one function.
+1. Run `vercel` from **inside this folder** (or push this folder as the root of a GitHub repo and import it).
+   If you import from GitHub, the project's **Root Directory** must be this folder.
+2. Vercel → Project → Settings → **Environment Variables**: add `MONGODB_URI`, `DB_NAME=bachat_mandal`,
+   `SESSION_SECRET` (any long random text) and `COOKIE_SECURE=true`. Then redeploy.
+3. MongoDB Atlas → Network Access → add `0.0.0.0/0` (Vercel has no fixed IP).
+4. Run `npm run seed` once from your computer (Vercel doesn't run it).
+5. Phone notifications work only on the HTTPS site (Vercel). Automatic payment reminders run from the
+   daily Vercel Cron in `vercel.json` (9:00 AM IST); set the days in Admin → Notifications.
+   Optional: add `CRON_SECRET` in Vercel env vars to lock the cron URL.
+
+Other Node hosts (Render, Railway, a VPS): `npm start` with the same variables.
 
 ## Already seeded the old 2025-26 year?
 `npm run fresh-start -- --yes` keeps families, members and logins, deletes old payments/loans, and starts 2026-27 from Besta Varsh (10-Nov-2026).

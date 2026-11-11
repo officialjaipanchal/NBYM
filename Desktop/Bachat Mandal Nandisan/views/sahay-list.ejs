@@ -1,6 +1,8 @@
 <%- include('partials/head', { title: t('sahay') }) %>
-<h2 class="h">🙏 <%= t('sahayTitle') %></h2>
-<div class="flash warn small"><%= t('sahayNote') %></div>
+<div class="pagehead">
+  <div><h2>🙏 <%= t('sahayTitle') %></h2><p class="muted small"><%= t('sahayNote') %></p></div>
+  <% if (me.role === 'admin') { %><div class="actions"><a class="btn" href="#newsahay">+ <%= t('newSahay') %></a></div><% } %>
+</div>
 <div class="card">
 <% if (!rows.length) { %><p class="muted"><%= t('noSahay') %></p><% } else { %>
 <div class="scroll"><table class="t">
@@ -14,15 +16,15 @@
 <% } %>
 </div>
 <% if (me.role === 'admin') { %>
-<div class="card">
-  <h3>+ <%= t('newSahay') %></h3>
+<div class="card" id="newsahay">
+  <h3><%= t('newSahay') %></h3>
   <form method="post" action="/sahay" class="stack two" data-confirm="<%= t('newSahay') %>?">
     <label><%= t('deceasedMember') %><select name="deceased" id="dec" required><option value=""></option><% members.forEach(m => { %><option value="<%= m._id %>" data-s="<%= m.name %> <%= m.nameGu || '' %> <%= m.srNo %> <%= m.mobile || '' %>" data-g="<%= m.group %>"><%= m.srNo %>. <%= mname(m) %></option><% }) %></select></label>
     <label><%= t('dateOfDeath') %><input type="date" name="dateOfDeath" value="<%= di(today) %>" required></label>
     <label><%= t('perHead') %><input type="number" name="amountPerMember" value="<%= settings.insuranceAmount %>" min="1"></label>
     <label><%= t('recipient') %><select name="recipient" id="rec" required><option value=""></option><% allMembers.forEach(m => { %><option value="<%= m._id %>" data-s="<%= m.name %> <%= m.nameGu || '' %> <%= m.srNo %> <%= m.mobile || '' %>" data-g="<%= m.group._id %>"><%= m.srNo %>. <%= mname(m) %> (<%= lang === 'gu' && m.group.nameGu ? m.group.nameGu : m.group.name %>)</option><% }) %></select></label>
     <label><%= t('note') %><input name="note"></label>
-    <div><button class="btn"><%= t('newSahay') %></button></div>
+    <div class="formactions"><button class="btn"><%= t('newSahay') %></button></div>
   </form>
 </div>
 <script>

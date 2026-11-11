@@ -1,0 +1,1 @@
+<% gl.forEach(g => { if (!g.member) return; %><span class="gchip <%= g.status %>" title="<%= t('gs_' + g.status) %>"><%= g.status === 'accepted' ? '✓' : g.status === 'declined' ? '✕' : '…' %> <%= mname(g.member) %></span><% }) %>

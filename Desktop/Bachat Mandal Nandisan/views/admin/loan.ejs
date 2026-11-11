@@ -1,49 +1,56 @@
 <%- include('../partials/head', { title: t('loans') }) %>
-<p><a href="/admin/loans">← <%= t('loans') %></a></p>
-<div class="card">
-  <h2>🔒 <%= mname(loan.borrower) %></h2>
-  <p class="muted small"><%= t('loanPrivate') %></p>
-  <div class="kv">
-    <span><%= t('loanAmount') %></span><b><%= money(loan.amount) %></b>
-    <span><%= t('loanDate') %></span><b><%= dl(loan.date) %></b>
-    <span><%= t('rate') %></span><b><%= loan.rate %>% <%= t(loan.ratePeriod === 'monthly' ? 'perMonth' : 'perYear') %></b>
-    <span><%= t('guarantors') %></span><b><%= loan.guarantors.map(mname).join(', ') %></b>
-    <% if (loan.reason) { %><span><%= t('reason') %></span><b><%= loan.reason %></b><% } %>
-    <span><%= t('status') %></span><b><span class="tag <%= loan.status %>"><%= t(loan.status) %></span></b>
+<a class="backlink" href="/admin/loans">← <%= t('loans') %></a>
+<div class="pagehead">
+  <div>
+    <h2>🔒 <%= mname(loan.borrower) %> <span class="tag <%= loan.status %>"><%= t(loan.status) %></span></h2>
+    <p class="muted small"><%= t('loanPrivate') %></p>
+  </div>
+  <div class="actions">
+    <% if (!loan.repayments.length) { %><form method="post" action="/admin/loans/<%= loan._id %>/delete" data-confirm="<%= t('confirmDelete') %>"><button class="btn ghost danger-text"><%= t('delete') %></button></form><% } %>
+    <form method="post" action="/admin/loans/<%= loan._id %>/status" data-confirm="<%= t(loan.status === 'active' ? 'closeLoan' : 'reopenLoan') %>?"><input type="hidden" name="status" value="<%= loan.status === 'active' ? 'closed' : 'active' %>"><button class="btn ghost"><%= t(loan.status === 'active' ? 'closeLoan' : 'reopenLoan') %></button></form>
+  </div>
+</div>
+<% if (st.overdue) { %><div class="flash err"><%= t('overdue') %></div><% } %>
+<div class="split">
+  <div class="card">
+    <h3><%= t('details') %></h3>
+    <div class="kv">
+      <span><%= t('loanAmount') %></span><b><%= money(loan.amount) %></b>
+      <span><%= t('loanDate') %></span><b><%= dl(loan.date) %></b>
+      <span><%= t('rate') %></span><b><%= loan.rate %>% <%= t(loan.ratePeriod === 'monthly' ? 'perMonth' : 'perYear') %></b>
+      <span><%= t('guarantors') %></span><b><%= loan.guarantors.map(mname).join(', ') %></b>
+      <% if (loan.reason) { %><span><%= t('reason') %></span><b><%= loan.reason %></b><% } %>
+    </div>
   </div>
   <div class="stats">
+    <div class="stat big"><span><%= t('totalDue') %> (<%= dl(today) %>)</span><b><%= money(st.totalDue) %></b></div>
     <div class="stat"><span><%= t('outstanding') %></span><b><%= money(st.principal) %></b></div>
-    <div class="stat"><span><%= t('interestDue') %> (<%= dl(today) %>)</span><b><%= money(st.interestDue) %></b></div>
-    <div class="stat big"><span><%= t('totalDue') %></span><b><%= money(st.totalDue) %></b></div>
+    <div class="stat"><span><%= t('interestDue') %></span><b><%= money(st.interestDue) %></b></div>
     <div class="stat"><span><%= t('monthlyInterest') %></span><b><%= money(st.monthlyInterestNow) %></b></div>
     <div class="stat"><span><%= t('interestIn') %></span><b><%= money(st.interestPaid) %></b></div>
   </div>
-  <% if (st.overdue) { %><div class="flash err"><%= t('overdue') %></div><% } %>
 </div>
 <% if (loan.status === 'active') { %>
 <div class="card">
   <h3><%= t('addRepayment') %></h3>
-  <form method="post" action="/admin/loans/<%= loan._id %>/repay" class="formrow">
-    <input type="date" name="date" value="<%= di(today) %>" required>
-    <input type="number" name="amount" min="1" step="0.01" placeholder="<%= t('amount') %>" required>
-    <input name="note" placeholder="<%= t('note') %>">
-    <button class="btn"><%= t('save') %></button>
+  <form method="post" action="/admin/loans/<%= loan._id %>/repay" class="stack three">
+    <label><%= t('date') %><input type="date" name="date" value="<%= di(today) %>" required></label>
+    <label><%= t('amount') %><input type="number" name="amount" min="1" step="0.01" inputmode="decimal" required></label>
+    <label><%= t('note') %><input name="note"></label>
+    <div class="formactions"><span class="muted small grow"><%= lang === 'gu' ? 'ચુકવણી પહેલા ચડેલા વ્યાજમાં જશે, બાકીની રકમ મુદ્દલમાં (નિયમ ૫).' : 'Payment first clears accrued interest; the rest reduces principal (Rule 5).' %></span><button class="btn"><%= t('addRepayment') %></button></div>
   </form>
-  <p class="muted small"><%= lang === 'gu' ? 'ચુકવણી પહેલા ચડેલા વ્યાજમાં જશે, બાકીની રકમ મુદ્દલમાં (નિયમ ૫).' : 'Payment first clears accrued interest; the rest reduces principal (Rule 5).' %></p>
 </div>
 <% } %>
 <div class="card">
   <h3><%= t('repayments') %></h3>
-  <table class="t small">
-    <tr><th><%= t('date') %></th><th><%= t('amount') %></th><th><%= t('toInterest') %></th><th><%= t('toPrincipal') %></th><th><%= t('outstanding') %></th><th><%= t('note') %></th><th></th></tr>
+  <% if (!st.rows.length) { %><p class="muted"><%= t('noRepayments') %></p><% } else { %>
+  <div class="scroll"><table class="t small">
+    <tr><th><%= t('date') %></th><th class="r"><%= t('amount') %></th><th class="r"><%= t('toInterest') %></th><th class="r"><%= t('toPrincipal') %></th><th class="r"><%= t('outstanding') %></th><th><%= t('note') %></th><th></th></tr>
     <% st.rows.forEach(r => { %>
-    <tr><td><%= dl(r.date) %></td><td><%= money(r.amount) %></td><td><%= money(r.toInterest) %></td><td><%= money(r.toPrincipal) %></td><td><%= money(r.principalAfter) %></td><td><%= r.note || '' %></td>
-      <td><form method="post" action="/admin/loans/<%= loan._id %>/repayments/<%= r._id %>/delete" data-confirm="<%= t('confirmDelete') %>"><button class="link small"><%= t('undo') %></button></form></td></tr>
+    <tr><td><%= dl(r.date) %></td><td class="r"><%= money(r.amount) %></td><td class="r"><%= money(r.toInterest) %></td><td class="r"><%= money(r.toPrincipal) %></td><td class="r"><b><%= money(r.principalAfter) %></b></td><td><%= r.note || '' %></td>
+      <td class="r act"><form method="post" action="/admin/loans/<%= loan._id %>/repayments/<%= r._id %>/delete" data-confirm="<%= t('confirmDelete') %>"><button class="iconbtn" title="<%= t('undo') %>" aria-label="<%= t('undo') %>">↺</button></form></td></tr>
     <% }) %>
-  </table>
-</div>
-<div class="row gap">
-  <form method="post" action="/admin/loans/<%= loan._id %>/status" data-confirm="<%= t(loan.status === 'active' ? 'closeLoan' : 'reopenLoan') %>?"><input type="hidden" name="status" value="<%= loan.status === 'active' ? 'closed' : 'active' %>"><button class="btn ghost"><%= t(loan.status === 'active' ? 'closeLoan' : 'reopenLoan') %></button></form>
-  <% if (!loan.repayments.length) { %><form method="post" action="/admin/loans/<%= loan._id %>/delete" data-confirm="<%= t('confirmDelete') %>"><button class="btn danger"><%= t('delete') %></button></form><% } %>
+  </table></div>
+  <% } %>
 </div>
 <%- include('../partials/foot') %>

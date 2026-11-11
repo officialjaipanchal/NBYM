@@ -1,0 +1,12 @@
+<template id="share-pending"><div class="sharecard">
+  <%- include('share-head', { stitle: t('pendingNow') + ' · ' + plist.length }) %>
+  <% const fam = new Map(); plist.forEach(p => { const g = p.member.group || {}; const k = String(g._id || g); if (!fam.has(k)) fam.set(k, { g, items: [], amount: 0, fine: 0 }); const f = fam.get(k); f.items.push(p); f.amount += p.amount; f.fine += p.fine; }); let tot = 0; %>
+  <table class="sc-t">
+    <% [...fam.values()].forEach(f => { tot += f.amount; %>
+    <tr class="sc-fam"><td><%= lang === 'gu' && f.g.nameGu ? f.g.nameGu : f.g.name %></td><td class="r"><%= money(f.amount) %><% if (showFines && f.fine) { %> <small>+<%= money(f.fine) %></small><% } %></td></tr>
+    <% f.items.forEach(p => { %><tr><td class="sc-mem"><%= mname(p.member) %></td><td class="r sc-m"><%= p.months.map(x => ml(x.month, true)).join(', ') %></td></tr><% }) %>
+    <% }) %>
+    <tr class="sc-tot"><td><%= t('total') %> · <%= fam.size %> <%= t('groups') %></td><td class="r"><%= money(tot) %></td></tr>
+  </table>
+  <div class="sc-foot"><%= t('dueBy', { d: settings.dueDay }) %> · <%= money(settings.monthlyAmount) %> <%= t('perMember') %></div>
+</div></template>

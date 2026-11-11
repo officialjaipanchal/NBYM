@@ -1,0 +1,12 @@
+<template id="share-paid"><div class="sharecard">
+  <% const act = members.filter(m => m.status === 'active'); const paidN = act.filter(m => byMember[String(m._id)]).length; %>
+  <%- include('share-head', { stitle: t('collections') + ' · ' + ml(month) + ' · ' + t('paidCount', { a: act.length, b: paidN }) }) %>
+  <div class="sc-cols">
+  <% groups.forEach(g => { const ms = act.filter(m => String(m.group) === String(g._id)); if (!ms.length) return; %>
+    <div class="sc-box"><b><%= lang === 'gu' && g.nameGu ? g.nameGu : g.name %></b>
+      <% ms.forEach(m => { const c = byMember[String(m._id)]; %><div class="<%= c ? 'ok' : 'no' %>"><%= c ? '✓' : '✗' %> <%= mname(m) %></div><% }) %>
+    </div>
+  <% }) %>
+  </div>
+  <div class="sc-foot">✓ <%= t('paid') %> <%= paidN %> · ✗ <%= t('notPaid') %> <%= act.length - paidN %> · <%= money(paidN * settings.monthlyAmount) %></div>
+</div></template>

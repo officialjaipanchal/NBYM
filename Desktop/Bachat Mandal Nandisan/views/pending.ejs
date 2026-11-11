@@ -1,6 +1,6 @@
 <%- include('partials/head', { title: t('pending') }) %>
-<h2 class="h"><%= t('pendingNow') %></h2>
-<p class="muted small"><%= t('year') %> <%= year.label %> · <%= t('dueBy', { d: settings.dueDay }) %></p>
+<div class="pagehead"><div><h2><%= t('pendingNow') %></h2><p class="muted small"><%= t('year') %> <%= year.label %> · <%= t('dueBy', { d: settings.dueDay }) %></p></div>
+<div class="actions"><% if (list.length) { %><button type="button" class="btn ghost" data-share="#share-pending" data-share-name="NBYM-pending">📤 <%= t('shareImage') %></button><% } %><% if (me.role === 'admin') { %><a class="btn" href="/admin/collections"><%= t('markPaid') %></a><% } %></div></div>
 <% if (!list.length) { %><div class="card center"><%= t('nobodyPending') %></div><% } else { %>
 <div class="card">
 <div class="scroll"><table class="t">
@@ -16,4 +16,5 @@
 </table></div>
 </div>
 <% } %>
+<% if (list.length) { %><%- include('partials/share-pending', { plist: list, showFines }) %><% } %>
 <%- include('partials/foot') %>

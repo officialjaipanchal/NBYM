@@ -15,7 +15,7 @@ const data = require('./members');
     console.log('Database already has members. Use "npm run seed -- --force" to wipe and re-seed.');
     process.exit(0);
   }
-  if (force) for (const k of ['Settings', 'Year', 'Group', 'Member', 'User', 'Contribution', 'Loan', 'Ledger', 'Audit', 'Sahay']) await M[k].deleteMany({});
+  if (force) for (const k of ['Settings', 'Year', 'Group', 'Member', 'User', 'Contribution', 'Loan', 'Ledger', 'Audit', 'Sahay', 'PushSub', 'PayClaim', 'Payout', 'LoanRequest']) await M[k].deleteMany({});
 
   // Accounting year starts on Besta Varsh (Gujarati New Year, VS 2083) = 10-Nov-2026; months Nov-26 .. Oct-27
   const year = await M.Year.create({ label: '2026-27 (સંવત 2083)', startDate: new Date('2026-11-10T00:00:00Z'), months: buildMonths('2026-11', 12) });

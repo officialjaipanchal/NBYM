@@ -1,0 +1,9 @@
+<template id="share-settlement"><div class="sharecard">
+  <%- include('share-head', { stitle: t('familySettlement') + ' · ' + summary.label }) %>
+  <table class="sc-t">
+    <tr class="sc-h"><td><%= t('group') %></td><td class="r"><%= t('deposited') %></td><td class="r">+ <%= t('interestShare') %></td><td class="r">− <%= t('nextMonthCut') %></td><td class="r">= <%= t('netToGive') %></td></tr>
+    <% summary.families.forEach(f => { %><tr><td><%= lang === 'gu' && f.nameGu ? f.nameGu : f.name %> <small>(<%= f.count %>)</small></td><td class="r"><%= money(f.deposited) %></td><td class="r"><%= money(f.dividend) %></td><td class="r sc-red"><%= f.nextDeduct ? money(f.nextDeduct) : '—' %></td><td class="r"><b><%= money(f.net) %></b></td></tr><% }) %>
+    <tr class="sc-tot"><td><%= t('total') %></td><td class="r"><%= money(summary.settle.deposited) %></td><td class="r"><%= money(summary.settle.dividend) %></td><td class="r"><%= money(summary.settle.nextDeduct) %></td><td class="r"><%= money(summary.settle.net) %></td></tr>
+  </table>
+  <div class="sc-foot"><%= t('interestIn') %> <%= money(summary.totals.interestIn) %> · <%= t('fines') %> <%= money(summary.totals.fines) %> · <%= t('dividendPool') %> <%= money(summary.pool) %></div>
+</div></template>

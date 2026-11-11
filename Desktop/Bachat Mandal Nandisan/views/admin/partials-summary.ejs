@@ -8,7 +8,7 @@
 </div>
 <% if (summary.families) { %>
 <div class="card printable">
-  <div class="row between"><h3><%= t('familySettlement') %> · <%= summary.label %></h3><button type="button" class="btn ghost sm noprint" onclick="window.print()">🖨 <%= t('print') %></button></div>
+  <h3><%= t('familySettlement') %> · <%= summary.label %></h3>
   <p class="muted small"><%= t('settleNote', { a: summary.monthly }) %></p>
   <div class="scroll"><table class="t settle">
     <tr><th><%= t('group') %></th><th><%= t('membersCount') %></th><th class="r"><%= t('deposited') %></th><th class="r">+ <%= t('interestShare') %></th><th class="r">= <%= t('withInterest') %></th><th class="r">− <%= t('nextMonthCut') %></th><th class="r">= <%= t('netToGive') %></th></tr>

@@ -1,6 +1,30 @@
 <%- include('../partials/head', { title: t('dashboard') }) %>
-<h2 class="h"><%= t('dashboard') %> · <%= t('year') %> <%= year.label %></h2>
-<% if (year.startDate) { %><p class="muted small"><%= t('yearStarted') %>: <%= t('bestaVarsh') %> <%= dl(year.startDate) %></p><% } %>
+<div class="pagehead">
+  <div><h2><%= t('dashboard') %></h2>
+    <p class="muted small"><%= t('year') %> <%= year.label %><% if (year.startDate) { %> · <%= t('bestaVarsh') %> <%= dl(year.startDate) %><% } %></p></div>
+  <div class="actions"><a class="btn" href="/admin/collections"><%= t('markPaid') %></a></div>
+</div>
+<% if (claims.length) { %>
+<div class="card claimsc" id="claims">
+  <div class="cardhead"><h3>⏳ <%= t('claimsToApprove') %> (<%= claims.length %>)</h3><span class="muted small"><%= t('claimsHelp') %></span></div>
+  <% claims.forEach(c => { const g = c.group || {}; %>
+  <div class="claimrow">
+    <div class="cr-main">
+      <b><%= lang === 'gu' && g.nameGu ? g.nameGu : g.name %></b> · <b><%= money(c.amount) %></b>
+      <div class="muted small"><%= c.items.map(i => (i.member ? mname(i.member) : '?') + ' ' + ml(i.month, true)).join(', ') %></div>
+      <div class="muted small"><%= t('paidOn') %> <%= dl(c.paidOn) %><%= c.ref ? ' · UPI ' + c.ref : '' %></div>
+    </div>
+    <div class="cr-act">
+      <details class="pop"><summary class="btn ghost xs"><%= t('reject') %></summary>
+        <form method="post" action="/admin/claims/<%= c._id %>/reject" class="popbody"><input name="reason" placeholder="<%= t('rejectReason') %>"><button class="btn sm danger"><%= t('reject') %></button></form>
+      </details>
+      <form method="post" action="/admin/claims/<%= c._id %>/approve"><button class="btn sm">✓ <%= t('approve') %></button></form>
+    </div>
+  </div>
+  <% }) %>
+</div>
+<% } %>
+<%- include('../partials/pushcard') %>
 <%- include('../partials/stats', { showBal: true, showLent: true, full: true }) %>
 <div class="gridcards">
   <div class="card">
@@ -19,13 +43,14 @@
     <h3>🔒 <%= t('loans') %></h3>
     <p><%= t('active') %>: <b><%= totals.activeLoans %></b> · <%= t('outstanding') %>: <b><%= money(totals.outstanding) %></b></p>
     <% overdue.forEach(x => { %><div class="flash err small"><a href="/admin/loans/<%= x.l._id %>"><%= mname(x.l.borrower) %></a> — <%= t('overdue') %></div><% }) %>
-    <p><a class="btn ghost" href="/admin/loans"><%= t('view') %></a></p>
+    <% if (lqCount) { %><p><b><%= lqCount %></b> <%= t('lrWaitingCount') %></p><% } %>
+    <p><a class="btn ghost" href="/admin/loans<%= lqCount ? '#queue' : '' %>"><%= t('view') %></a></p>
   </div>
 </div>
 <div class="card" id="pending">
   <div class="row between">
     <h3>⏳ <%= t('pendingNow') %> (<%= pending.length %>)</h3>
-    <% if (pendingFamilies.length) { %><span class="tag no"><%= pendingFamilies.length %> <%= t('groups') %> · <%= money(pending.reduce((a, p) => a + p.amount, 0)) %></span><% } %>
+    <% if (pendingFamilies.length) { %><div class="row"><span class="tag no"><%= pendingFamilies.length %> <%= t('groups') %> · <%= money(pending.reduce((a, p) => a + p.amount, 0)) %></span><button type="button" class="btn ghost xs" data-share="#share-pending" data-share-name="NBYM-pending">📤 <%= t('shareImage') %></button></div><% } %>
   </div>
   <% if (!pendingFamilies.length) { %><p class="muted"><%= t('nobodyPending') %></p><% } else { %>
   <input class="search" data-cardsearch placeholder="🔍 <%= t('typeToSearch') %>">
@@ -65,4 +90,5 @@
     <tr class="totrow"><td>= <%= t('currentBalance') %></td><td class="r"><%= money(totals.cash) %></td></tr>
   </table>
 </div>
+<% if (pending.length) { %><%- include('../partials/share-pending', { plist: pending, showFines: true }) %><% } %>
 <%- include('../partials/foot') %>

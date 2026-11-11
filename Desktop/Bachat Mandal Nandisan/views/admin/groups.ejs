@@ -1,47 +1,66 @@
 <%- include('../partials/head', { title: t('groups') }) %>
-<h2 class="h"><%= t('groups') %> (<%= groups.length %>) · <%= t('members') %> (<%= members.length %>)</h2>
-<details class="card"><summary><b>+ <%= t('addGroup') %></b></summary>
-  <form method="post" action="/admin/groups" class="formrow">
-    <input name="name" placeholder="<%= t('nameEn') %> (<%= t('head') %>)" required>
-    <input name="nameGu" placeholder="<%= t('nameGu') %>">
-    <input name="mobile" placeholder="<%= t('mobile') %>" inputmode="tel">
-    <button class="btn"><%= t('add') %></button>
+<div class="pagehead">
+  <div>
+    <h2><%= t('groups') %></h2>
+    <p class="muted small"><%= groups.length %> <%= t('groups') %> · <%= members.length %> <%= t('members') %></p>
+  </div>
+  <div class="actions"><button type="button" class="btn" onclick="const d=document.getElementById('addfam');d.open=true;d.scrollIntoView({behavior:'smooth'});d.querySelector('input').focus()">+ <%= t('addGroup') %></button></div>
+</div>
+<details class="card panel" id="addfam"><summary><%= t('addGroup') %></summary>
+  <form method="post" action="/admin/groups" class="stack three">
+    <label><%= t('nameEn') %> (<%= t('head') %>)<input name="name" required></label>
+    <label><%= t('nameGu') %><input name="nameGu"></label>
+    <label><%= t('mobile') %><input name="mobile" inputmode="tel"></label>
+    <div class="formactions"><button class="btn"><%= t('addGroup') %></button></div>
   </form>
 </details>
-<input class="search" placeholder="🔍 <%= t('search') %>" data-cardsearch>
+<input class="search" placeholder="🔍 <%= t('typeToSearch') %>" data-cardsearch>
 <div class="gridcards">
 <% groups.forEach(g => { const ms = members.filter(m => String(m.group) === String(g._id)); const u = userByGroup[String(g._id)]; %>
-  <div class="card gcard" id="g<%= g._id %>" data-s="<%= g.name %> <%= ms.map(m => m.name + ' ' + m.srNo).join(' ') %>">
-    <div class="row between">
-      <h3><%= lang === 'gu' && g.nameGu ? g.nameGu : g.name %></h3>
-      <span class="tag soft"><%= ms.length %> <%= t('membersCount') %></span>
+  <div class="card gcard" id="g<%= g._id %>" data-s="<%= g.name %> <%= g.mobile || '' %> <%= ms.map(m => m.name + ' ' + m.srNo).join(' ') %>">
+    <div class="cardhead">
+      <div>
+        <h3><%= lang === 'gu' && g.nameGu ? g.nameGu : g.name %></h3>
+        <div class="meta"><% if (g.mobile) { %><a href="tel:<%= g.mobile %>">📞 <%= g.mobile %></a><% } else { %>—<% } %>
+          <% if (g.upiId || g.upiQr) { %> · <span class="tag active" title="<%= g.upiId || 'QR' %>">UPI ✓</span><% } %><% if (u && u.username !== g.mobile) { %> · <span title="<%= t('loginOf') %>">🔑 <%= u.username %></span><% } %><% if (u && !u.active) { %> <span class="tag closed"><%= t('disabled') %></span><% } %><% if (!u) { %> <span class="tag no"><%= t('noLogin') %></span><% } %></div>
+      </div>
+      <span class="count"><%= ms.length %></span>
     </div>
-    <div class="muted small">📱 <%= g.mobile || '—' %> · <%= t('loginOf') %>: <% if (u) { %><b><%= u.username %></b> <span class="tag <%= u.active ? 'active' : 'closed' %>"><%= u.active ? t('enabled') : t('disabled') %></span><% } else { %><span class="tag no"><%= t('noLogin') %></span><% } %></div>
-    <table class="t small">
-      <% ms.forEach(m => { %>
+    <table class="t small members">
+      <% ms.forEach(m => { const isHead = String(g.head) === String(m._id); %>
       <tr class="<%= m.status !== 'active' ? 'dim' : '' %>">
-        <td><%= m.srNo %></td>
-        <td><a href="/admin/members/<%= m._id %>"><%= mname(m) %></a><% if (String(g.head) === String(m._id)) { %> <span class="tag head"><%= t('head') %></span><% } %><% if (m.status !== 'active') { %> <span class="tag closed"><%= t(m.status) %></span><% } %></td>
-        <td class="r"><% if (String(g.head) !== String(m._id)) { %><form method="post" action="/admin/groups/<%= g._id %>/head" class="inline"><input type="hidden" name="member" value="<%= m._id %>"><button class="link small"><%= t('makeHead') %></button></form><% } %></td>
+        <td class="sr"><%= m.srNo %></td>
+        <td><a href="/admin/members/<%= m._id %>"><%= mname(m) %></a><% if (isHead) { %> <span class="tag head"><%= t('head') %></span><% } %><% if (m.status !== 'active') { %> <span class="tag closed"><%= t(m.status) %></span><% } %></td>
+        <td class="r act"><% if (!isHead && m.status === 'active') { %><form method="post" action="/admin/groups/<%= g._id %>/head" class="inline"><input type="hidden" name="member" value="<%= m._id %>"><button class="iconbtn" title="<%= t('makeHead') %>" aria-label="<%= t('makeHead') %>">★</button></form><% } %></td>
       </tr>
       <% }) %>
     </table>
-    <details><summary class="small">+ <%= t('addMember') %></summary>
-      <form method="post" action="/admin/groups/<%= g._id %>/members" class="formrow">
-        <input name="name" placeholder="<%= t('nameEn') %>" required><input name="nameGu" placeholder="<%= t('nameGu') %>"><input name="mobile" placeholder="<%= t('mobile') %>"><button class="btn sm"><%= t('add') %></button>
-      </form>
-    </details>
-    <details><summary class="small">🔑 <%= u ? t('resetPassword') : t('createLogin') %></summary>
-      <form method="post" action="/admin/groups/<%= g._id %>/login" class="formrow">
-        <input name="username" value="<%= u ? u.username : (g.mobile || '') %>" placeholder="<%= t('username') %>" required>
-        <input name="password" placeholder="<%= t('newPassword') %>" minlength="6" required><button class="btn sm"><%= t('save') %></button>
-      </form>
-    </details>
-    <details><summary class="small">✎ <%= t('edit') %></summary>
-      <form method="post" action="/admin/groups/<%= g._id %>" class="formrow">
-        <input name="name" value="<%= g.name %>"><input name="nameGu" value="<%= g.nameGu || '' %>"><input name="mobile" value="<%= g.mobile || '' %>"><input name="order" type="number" value="<%= g.order %>" style="max-width:5em" title="order"><button class="btn sm"><%= t('save') %></button>
-      </form>
-      <% if (!ms.length) { %><form method="post" action="/admin/groups/<%= g._id %>/delete" data-confirm="<%= t('confirmDelete') %>"><button class="btn sm danger"><%= t('delete') %></button></form><% } %>
+    <details class="manage"><summary><%= t('manage') %></summary>
+      <div class="managebody">
+        <form method="post" action="/admin/groups/<%= g._id %>/members" class="mgroup">
+          <b><%= t('addMember') %></b>
+          <div class="formrow"><input name="name" placeholder="<%= t('nameEn') %>" required><input name="nameGu" placeholder="<%= t('nameGu') %>"><input name="mobile" placeholder="<%= t('mobile') %>" inputmode="tel"></div>
+          <div class="formactions"><button class="btn sm"><%= t('addMember') %></button></div>
+        </form>
+        <form method="post" action="/admin/groups/<%= g._id %>/login" class="mgroup">
+          <b><%= u ? t('resetPassword') : t('createLogin') %></b>
+          <div class="formrow"><input name="username" value="<%= u ? u.username : (g.mobile || '') %>" placeholder="<%= t('username') %>" required><input name="password" placeholder="<%= t('newPassword') %>" minlength="6" required></div>
+          <div class="formactions"><button class="btn sm"><%= u ? t('resetPassword') : t('createLogin') %></button></div>
+        </form>
+        <form method="post" action="/admin/groups/<%= g._id %>/upi" class="mgroup">
+          <b>💳 <%= t('familyUpi') %></b>
+          <div class="formrow"><input name="upiId" value="<%= g.upiId || '' %>" placeholder="name@okaxis" autocapitalize="off"><input name="upiName" value="<%= g.upiName || '' %>" placeholder="<%= t('upiName') %>"></div>
+          <div class="formactions"><% if (g.upiQr) { %><span class="muted small grow">✓ QR</span><% } %><button class="btn sm"><%= t('save') %></button></div>
+        </form>
+        <form method="post" action="/admin/groups/<%= g._id %>" class="mgroup">
+          <b><%= t('editFamily') %></b>
+          <div class="formrow"><input name="name" value="<%= g.name %>" placeholder="<%= t('nameEn') %>"><input name="nameGu" value="<%= g.nameGu || '' %>" placeholder="<%= t('nameGu') %>"><input name="mobile" value="<%= g.mobile || '' %>" placeholder="<%= t('mobile') %>"><input name="order" type="number" value="<%= g.order %>" class="w-num" title="<%= t('srNo') %>"></div>
+          <div class="formactions">
+            <% if (!ms.length) { %><button class="btn sm danger" formaction="/admin/groups/<%= g._id %>/delete" onclick="return confirm('<%= t('confirmDelete') %>')"><%= t('delete') %></button><% } %>
+            <button class="btn sm"><%= t('save') %></button>
+          </div>
+        </form>
+      </div>
     </details>
   </div>
 <% }) %>

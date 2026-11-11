@@ -1,40 +1,43 @@
 <%- include('../partials/head', { title: t('collections') }) %>
-<h2 class="h"><%= t('collections') %> · <%= ml(month) %></h2>
+<div class="pagehead"><div><h2><%= t('collections') %></h2><p class="muted small"><%= ml(month) %> · <%= t('dueBy', { d: settings.dueDay }) %></p></div>
+<div class="actions"><button type="button" class="btn ghost" data-share="#share-paid" data-share-name="NBYM-paid">📤 <%= t('shareImage') %></button></div></div>
 <div class="monthtabs">
   <% year.months.forEach(mk => { %><a href="?month=<%= mk %>" class="<%= mk === month ? 'on' : '' %>"><%= ml(mk, true) %></a><% }) %>
 </div>
 <% const active = members.filter(m => m.status === 'active'); const paidN = active.filter(m => byMember[String(m._id)]).length; %>
 <div class="card">
-  <div class="row between"><b><%= t('paidCount', { a: active.length, b: paidN }) %></b><span class="muted small"><%= t('dueBy', { d: settings.dueDay }) %> (<%= dl(due) %>)</span></div>
+  <div class="row between"><b><%= t('paidCount', { a: active.length, b: paidN }) %></b><span class="muted small"><%= t('lastDate') %>: <%= dl(due) %></span></div>
   <div class="bar"><i style="width:<%= active.length ? Math.round(paidN * 100 / active.length) : 0 %>%"></i></div>
   <p class="muted small"><%= t('bulkHelp') %></p>
 </div>
 <form method="post" action="/admin/collections" id="coll">
 <input type="hidden" name="month" value="<%= month %>">
 <div class="card sticky-bar">
-  <div class="formrow">
-    <label><%= t('paidOn') %> <input type="date" name="paidOn" value="<%= di(today) %>"></label>
+  <div class="toolbar">
+    <label class="inl"><span><%= t('paidOn') %></span><input type="date" name="paidOn" value="<%= di(today) %>"></label>
     <label class="chk"><input type="checkbox" name="noLateFee"> <%= t('noLateFee') %></label>
-    <button type="button" class="btn ghost sm" onclick="document.querySelectorAll('#coll input[name=pay]').forEach(x=>x.checked=true)"><%= t('markAll') %></button>
-    <button class="btn"><%= t('save') %></button>
+    <div class="actions">
+      <button type="button" class="btn ghost" onclick="document.querySelectorAll('#coll input[name=pay]').forEach(x=>x.checked=true)"><%= t('markAll') %></button>
+      <button class="btn"><%= t('savePayments') %></button>
+    </div>
   </div>
 </div>
 <input class="search" data-cardsearch placeholder="🔍 <%= t('typeToSearch') %>">
 <div class="gridcards">
 <% groups.forEach(g => { const ms = members.filter(m => String(m.group) === String(g._id) && (m.status === 'active' || byMember[String(m._id)])); if (!ms.length) return; %>
   <div class="card" data-s="<%= g.name %> <%= g.mobile || '' %> <%= ms.map(m => m.name + ' ' + m.srNo).join(' ') %>">
-    <div class="row between"><h3><%= lang === 'gu' && g.nameGu ? g.nameGu : g.name %></h3>
-      <button type="button" class="link small" onclick="this.closest('.card').querySelectorAll('input[name=pay]').forEach(x=>x.checked=true)">✓ <%= t('markAll') %></button></div>
+    <div class="cardhead"><h3><%= lang === 'gu' && g.nameGu ? g.nameGu : g.name %></h3>
+      <button type="button" class="btn ghost xs" onclick="this.closest('.card').querySelectorAll('input[name=pay]').forEach(x=>x.checked=true)">✓ <%= t('markAll') %></button></div>
     <table class="t small">
     <% ms.forEach(m => { const c = byMember[String(m._id)]; %>
       <tr>
         <% if (c) { %>
           <td class="c ok">✓</td><td><%= mname(m) %></td>
           <td class="small muted"><%= dl(c.paidOn) %><% if (c.lateFee) { %> · <span class="txt-bad"><%= t('lateFee') %> <%= money(c.lateFee) %></span><% } %></td>
-          <td class="r"><button class="link small" form="del<%= c._id %>"><%= t('undo') %></button></td>
+          <td class="r act"><button class="iconbtn" form="del<%= c._id %>" title="<%= t('undo') %>" aria-label="<%= t('undo') %>">↺</button></td>
         <% } else { %>
           <td><input type="checkbox" name="pay" value="<%= m._id %>" id="p<%= m._id %>"></td><td><label for="p<%= m._id %>"><%= mname(m) %></label></td>
-          <td colspan="2"><input type="date" name="date_<%= m._id %>" class="small" title="<%= t('paidOn') %> (<%= t('optional') %>)"></td>
+          <td colspan="2" class="optdate"><input type="date" name="date_<%= m._id %>" class="small" title="<%= t('paidOn') %> (<%= t('optional') %>)"></td>
         <% } %>
       </tr>
     <% }) %>
@@ -44,4 +47,5 @@
 </div>
 </form>
 <% Object.values(byMember).forEach(c => { %><form id="del<%= c._id %>" method="post" action="/admin/contributions/<%= c._id %>/delete" data-confirm="<%= t('confirmDelete') %>"></form><% }) %>
+<%- include('../partials/share-paid') %>
 <%- include('../partials/foot') %>

@@ -47,7 +47,21 @@ router.get('/', requireLogin, async (req, res) => {
   const lastYear = await Year.findOne({ status: 'closed' }).sort({ closedAt: -1 });
   const settlement = lastYear?.summary?.families?.find((f) => f.groupId === String(group._id));
   const settlementRows = settlement ? lastYear.summary.rows.filter((r) => r.groupId === String(group._id)) : [];
-  res.render('dashboard', { sahayDue, lastYear, settlement, settlementRows,
+  const { PayClaim, Payout } = require('../models');
+  const upi = require('../lib/upi');
+  const myClaims = await PayClaim.find({ group: group._id, $or: [{ status: 'pending' }, { status: 'rejected', decidedAt: { $gte: new Date(Date.now() - 7 * 864e5) } }] }).sort({ createdAt: -1 });
+  const claimedKeys = new Set(myClaims.filter((c) => c.status === 'pending').flatMap((c) => c.items.map((i) => `${i.member}|${i.month}`)));
+  const payout = lastYear ? await Payout.findOne({ year: lastYear._id, group: group._id }) : null;
+  const dueTotal = myPending.reduce((a, p) => a + p.amount + p.fine, 0);
+  const payLink = upi.link(settings.mandalUpiId, settings.mandalUpiName || settings.shortName || 'NBYM', dueTotal, `NBYM ${group.name}`.slice(0, 50));
+  const { LoanRequest } = require('../models');
+  const q = await require('./loanqueue').queue();
+  const myRequests = await LoanRequest.find({ group: group._id, $or: [{ status: 'waiting' }, { decidedAt: { $gte: new Date(Date.now() - 14 * 864e5) } }] }).populate('borrower guarantors.member').sort({ createdAt: -1 });
+  const qpos = (r) => q.findIndex((x) => String(x._id) === String(r._id)) + 1;
+  const guarAsks = q.filter((r) => r.guarantors.some((g) => g.member && String(g.member.group) === String(group._id) && g.status === 'asked'));
+  const allActive = await Member.find({ status: 'active' }).sort({ srNo: 1 });
+  const busyG = await require('../lib/loans').busyGuarantors();
+  res.render('dashboard', { myRequests, qpos, qlen: q.length, guarAsks, allActive, busyG, sahayDue, lastYear, settlement, settlementRows, myClaims, claimedKeys, payout, dueTotal, payLink,
     group, members, year, paid, familyTotal, familyFines, myLoans, guaranteeLoans, totals, myPending,
     allPendingCount: allPending ? allPending.length : null,
     started: new Set(calc.startedMonths(year)),
@@ -75,7 +89,8 @@ router.get('/members', requireLogin, async (req, res) => {
 
 router.get('/rules', requireLogin, (req, res) => {
   if (!isAdmin(req) && !res.locals.settings.perm.showRules) return denied(res);
-  res.render('rules', { rules: RULES });
+  const s = res.locals.settings;
+  res.render('rules', { rules: s.rules && s.rules.length ? s.rules : RULES, updatedAt: s.rulesUpdatedAt });
 });
 
 module.exports = router;

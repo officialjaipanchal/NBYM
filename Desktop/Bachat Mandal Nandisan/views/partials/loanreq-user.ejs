@@ -1,0 +1,36 @@
+<% guarAsks.forEach(r => { %>
+<div class="card guarc" id="guarantee">
+  <h3>🤝 <%= t('guarAskTitle') %></h3>
+  <p><%= t('guarAskText', { b: mname(r.borrower), a: money(r.amount) }) %></p>
+  <p class="muted small"><%= r.reason ? t('reason') + ': ' + r.reason + ' · ' : '' %><%= t('guarAskNote') %></p>
+  <div class="formactions">
+    <form method="post" action="/my/guarantee/<%= r._id %>"><input type="hidden" name="answer" value="decline"><button class="btn ghost danger-text"><%= t('guarDecline') %></button></form>
+    <form method="post" action="/my/guarantee/<%= r._id %>"><input type="hidden" name="answer" value="accept"><button class="btn"><%= t('guarAccept') %></button></form>
+  </div>
+</div>
+<% }) %>
+<div class="card" id="loanreq">
+  <div class="cardhead"><div><h3>🏦 <%= t('lrTitle') %></h3><p class="muted small"><%= t('lrHelp', { n: money(settings.maxLoan) }) %></p></div>
+    <% if (qlen) { %><span class="tag soft" title="<%= t('lrQueueLen') %>"><%= t('lrQueueLen') %>: <%= qlen %></span><% } %></div>
+  <% myRequests.forEach(r => { const p = qpos(r); %>
+  <div class="lrrow <%= r.status %>">
+    <div class="lr-main">
+      <div><b><%= mname(r.borrower) %> · <%= money(r.amount) %></b> <span class="tag <%= r.status === 'waiting' ? 'soft' : r.status === 'approved' ? 'active' : 'no' %>"><%= t('lrs_' + r.status) %></span></div>
+      <% if (r.status === 'waiting') { %><div class="qpos"><span class="qnum">#<%= p %></span> <%= t('lrPosition', { p, n: qlen }) %></div><% } %>
+      <div class="small muted"><%= t('lrApplied') %> <%= dl(r.createdAt) %><%= r.note ? ' · ' + r.note : '' %></div>
+      <div class="small"><%= t('guarantors') %>: <%- include('guarchips', { gl: r.guarantors }) %></div>
+    </div>
+    <% if (r.status === 'waiting') { %><form method="post" action="/my/loan-request/<%= r._id %>/cancel" data-confirm="<%= t('lrCancel') %>?"><button class="btn ghost xs"><%= t('lrCancel') %></button></form><% } %>
+  </div>
+  <% }) %>
+  <details class="claim" <%= myRequests.some(r => r.status === 'waiting') ? '' : '' %>><summary class="btn <%= myRequests.length ? 'ghost' : '' %>">+ <%= t('lrApply') %></summary>
+    <form method="post" action="/my/loan-request" class="stack two">
+      <label><%= t('borrower') %><select name="borrower" required><% members.filter(m => m.status === 'active').forEach(m => { %><option value="<%= m._id %>"><%= mname(m) %></option><% }) %></select></label>
+      <label><%= t('loanAmount') %><input type="number" name="amount" min="500" step="500" max="<%= settings.maxLoan %>" inputmode="numeric" required></label>
+      <label><%= t('guarantor') %> 1<select name="g1" required><option value=""></option><% allActive.forEach(m => { %><option value="<%= m._id %>" data-s="<%= m.name %> <%= m.nameGu || '' %> <%= m.srNo %>" <%= busyG.has(String(m._id)) ? 'disabled' : '' %>><%= m.srNo %>. <%= mname(m) %><%= busyG.has(String(m._id)) ? ' (' + t('guarantor') + ')' : '' %></option><% }) %></select></label>
+      <label><%= t('guarantor') %> 2<select name="g2" required><option value=""></option><% allActive.forEach(m => { %><option value="<%= m._id %>" data-s="<%= m.name %> <%= m.nameGu || '' %> <%= m.srNo %>" <%= busyG.has(String(m._id)) ? 'disabled' : '' %>><%= m.srNo %>. <%= mname(m) %><%= busyG.has(String(m._id)) ? ' (' + t('guarantor') + ')' : '' %></option><% }) %></select></label>
+      <label class="full"><%= t('reason') %><input name="reason" maxlength="200" placeholder="<%= t('lrReasonEg') %>"></label>
+      <div class="formactions"><span class="muted small grow"><%= t('lrPrivacy') %></span><button class="btn"><%= t('lrSubmit') %></button></div>
+    </form>
+  </details>
+</div>

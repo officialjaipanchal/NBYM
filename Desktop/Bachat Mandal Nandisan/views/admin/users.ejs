@@ -1,35 +1,48 @@
 <%- include('../partials/head', { title: t('users') }) %>
-<h2 class="h"><%= t('users') %></h2>
+<div class="pagehead">
+  <div><h2><%= t('users') %></h2><p class="muted small"><%= users.length %> <%= t('users') %></p></div>
+  <div class="actions"><a class="btn" href="#newadmin">+ <%= t('addAdmin') %></a></div>
+</div>
 <div class="card">
   <h3>👤 <%= t('currentAdmin') %></h3>
   <p class="muted small"><%= t('adminNote') %></p>
-  <table class="t small">
-    <tr><th><%= t('username') %></th><th><%= t('whoIsAdmin') %></th><th><%= t('status') %></th></tr>
-    <% users.filter(u => u.role === 'admin').forEach(u => { %>
-    <tr class="<%= u.active ? '' : 'dim' %>"><td><b><%= u.username %></b></td>
-      <td><form method="post" action="/admin/users/<%= u._id %>/member" class="formrow tight">
-        <select name="member"><option value="">—</option><% members.forEach(m => { %><option value="<%= m._id %>" data-s="<%= m.name %> <%= m.nameGu || '' %> <%= m.srNo %> <%= m.mobile || '' %>" <%= u.member && String(u.member._id) === String(m._id) ? 'selected' : '' %>><%= m.srNo %>. <%= mname(m) %></option><% }) %></select>
-        <button class="btn sm"><%= t('save') %></button></form></td>
-      <td><%= u.active ? t('enabled') : t('disabled') %></td></tr>
-    <% }) %>
-  </table>
-</div>
-<div class="card">
-<div class="scroll"><table class="t small">
-  <tr><th><%= t('username') %></th><th><%= t('role') %></th><th><%= t('group') %> / <%= t('name') %></th><th><%= t('lastLogin') %></th><th><%= t('status') %></th><th><%= t('resetPassword') %></th></tr>
-  <% users.forEach(u => { %>
-  <tr class="<%= u.active ? '' : 'dim' %>"><td><b><%= u.username %></b></td><td><span class="tag <%= u.role === 'admin' ? 'head' : 'soft' %>"><%= t(u.role) %></span></td>
-    <td><%= u.group ? (lang === 'gu' && u.group.nameGu ? u.group.nameGu : u.group.name) : (u.member ? mname(u.member) : '—') %></td><td><%= u.lastLogin ? dl(u.lastLogin) : '—' %></td>
-    <td><form method="post" action="/admin/users/<%= u._id %>/toggle"><button class="link small"><%= u.active ? t('enabled') : t('disabled') %></button></form></td>
-    <td><form method="post" action="/admin/users/<%= u._id %>/reset" class="formrow tight"><input name="password" minlength="6" placeholder="<%= t('newPassword') %>" required><button class="btn sm"><%= t('save') %></button></form></td></tr>
+  <% users.filter(u => u.role === 'admin').forEach(u => { %>
+  <form method="post" action="/admin/users/<%= u._id %>/member" class="adminrow">
+    <div class="who-cell"><b><%= u.username %></b><% if (!u.active) { %> <span class="tag closed"><%= t('disabled') %></span><% } %></div>
+    <select name="member" aria-label="<%= t('whoIsAdmin') %>"><option value="">—</option><% members.forEach(m => { %><option value="<%= m._id %>" data-s="<%= m.name %> <%= m.nameGu || '' %> <%= m.srNo %> <%= m.mobile || '' %>" <%= u.member && String(u.member._id) === String(m._id) ? 'selected' : '' %>><%= m.srNo %>. <%= mname(m) %></option><% }) %></select>
+    <button class="btn"><%= t('save') %></button>
+  </form>
   <% }) %>
-</table></div>
 </div>
 <div class="card">
-  <h3>+ <%= t('addAdmin') %></h3>
-  <form method="post" class="formrow">
-    <select name="member" required><option value=""><%= t('whoIsAdmin') %></option><% members.forEach(m => { %><option value="<%= m._id %>" data-s="<%= m.name %> <%= m.nameGu || '' %> <%= m.srNo %> <%= m.mobile || '' %>"><%= m.srNo %>. <%= mname(m) %></option><% }) %></select>
-    <input name="username" placeholder="<%= t('username') %>" required><input name="password" minlength="6" placeholder="<%= t('password') %>" required><button class="btn"><%= t('add') %></button></form>
-  <p class="muted small"><%= lang === 'gu' ? 'પરિવારના લોગિન "પરિવાર / ગ્રુપ" પાનામાંથી બનાવો. જૂના એડમિનને બંધ કરવા ઉપરના લિસ્ટમાં "ચાલુ" પર ક્લિક કરો.' : 'Family logins are created from the Families page. To retire an admin, click "Enabled" in the list above.' %></p>
+  <input class="search" placeholder="🔍 <%= t('typeToSearch') %>" oninput="const q=this.value.toLowerCase();document.querySelectorAll('#ulist tr[data-s]').forEach(r=>r.style.display=r.dataset.s.toLowerCase().includes(q)?'':'none')">
+  <div class="scroll"><table class="t" id="ulist">
+    <tr><th><%= t('username') %></th><th><%= t('group') %> / <%= t('name') %></th><th><%= t('lastLogin') %></th><th><%= t('status') %></th><th class="r"><%= t('actions') %></th></tr>
+    <% users.forEach(u => { const nm = u.group ? (lang === 'gu' && u.group.nameGu ? u.group.nameGu : u.group.name) : (u.member ? mname(u.member) : '—'); %>
+    <tr class="<%= u.active ? '' : 'dim' %>" data-s="<%= u.username %> <%= nm %> <%= u.group ? u.group.name : '' %>">
+      <td><b><%= u.username %></b> <% if (u.role === 'admin') { %><span class="tag head"><%= t('admin') %></span><% } %><% if (u.mustChangePassword) { %> <span class="tag soft" title="<%= t('mustChangeTag') %>">🔒</span><% } %></td>
+      <td><%= nm %></td>
+      <td class="muted"><%= u.lastLogin ? dl(u.lastLogin) : '—' %></td>
+      <td><form method="post" action="/admin/users/<%= u._id %>/toggle"><button class="switch <%= u.active ? 'on' : '' %>" title="<%= t('toggle') %>"><span></span><%= u.active ? t('enabled') : t('disabled') %></button></form></td>
+      <td class="r">
+        <details class="pop"><summary class="btn ghost xs"><%= t('resetPassword') %></summary>
+          <form method="post" action="/admin/users/<%= u._id %>/reset" class="popbody">
+            <input name="password" minlength="6" placeholder="<%= t('newPassword') %>" required>
+            <button class="btn sm"><%= t('save') %></button>
+          </form>
+        </details>
+      </td>
+    </tr>
+    <% }) %>
+  </table></div>
+</div>
+<div class="card" id="newadmin">
+  <h3><%= t('addAdmin') %></h3>
+  <form method="post" class="stack three">
+    <label><%= t('whoIsAdmin') %><select name="member" required><option value=""></option><% members.forEach(m => { %><option value="<%= m._id %>" data-s="<%= m.name %> <%= m.nameGu || '' %> <%= m.srNo %> <%= m.mobile || '' %>"><%= m.srNo %>. <%= mname(m) %></option><% }) %></select></label>
+    <label><%= t('username') %><input name="username" required></label>
+    <label><%= t('password') %><input name="password" minlength="6" required></label>
+    <div class="formactions"><span class="muted small grow"><%= lang === 'gu' ? 'પરિવારના લોગિન "પરિવાર / ગ્રુપ" પાનામાંથી બને છે.' : 'Family logins are created from the Families page.' %></span><button class="btn"><%= t('addAdmin') %></button></div>
+  </form>
 </div>
 <%- include('../partials/foot') %>

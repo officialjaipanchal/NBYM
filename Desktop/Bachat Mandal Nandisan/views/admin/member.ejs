@@ -1,5 +1,5 @@
 <%- include('../partials/head', { title: t('editMember') }) %>
-<p><a href="/admin/groups#g<%= member.group._id %>">← <%= t('back') %></a></p>
+<a class="backlink" href="/admin/groups#g<%= member.group._id %>">← <%= t('groups') %></a>
 <div class="card">
   <h2><%= t('editMember') %>: <%= mname(member) %></h2>
   <form method="post" class="stack two">
@@ -9,9 +9,9 @@
     <label><%= t('mobile') %><input name="mobile" value="<%= member.mobile || '' %>"></label>
     <label><%= t('group') %> (<%= t('moveTo') %>)<select name="group"><% groups.forEach(g => { %><option value="<%= g._id %>" data-s="<%= g.name %> <%= g.nameGu || '' %> <%= g.mobile || '' %>" <%= String(g._id) === String(member.group._id) ? 'selected' : '' %>><%= lang === 'gu' && g.nameGu ? g.nameGu : g.name %></option><% }) %></select></label>
     <label><%= t('status') %><select name="status"><% ['active', 'left', 'deceased'].forEach(s => { %><option value="<%= s %>" <%= member.status === s ? 'selected' : '' %>><%= t(s) %></option><% }) %></select></label>
-    <div><button class="btn"><%= t('save') %></button></div>
+    <div class="formactions"><button class="btn ghost danger-text" form="delm" type="submit"><%= t('delete') %></button><button class="btn"><%= t('save') %></button></div>
   </form>
-  <form method="post" action="/admin/members/<%= member._id %>/delete" data-confirm="<%= t('confirmDelete') %>"><button class="btn sm danger"><%= t('delete') %></button></form>
+  <form id="delm" method="post" action="/admin/members/<%= member._id %>/delete" data-confirm="<%= t('confirmDelete') %>"></form>
 </div>
 <div class="card">
   <h3><%= t('collections') %> · <%= year.label %></h3>

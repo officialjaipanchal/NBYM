@@ -50,6 +50,11 @@ router.post('/sahay', requireAdmin, async (req, res) => {
     contributors, note: req.body.note,
   });
   await audit(req, 'sahay.create', `${dead.name}, ${contributors.length} members × ${s.amountPerMember}`);
+  await require('../lib/push').toAll((t, lang) => ({
+    title: t('pushSahayTitle'),
+    body: t('pushSahayBody', { n: lang === 'gu' && dead.nameGu ? dead.nameGu : dead.name, a: '₹' + s.amountPerMember }),
+    url: '/sahay/' + s._id, tag: 'sahay',
+  })).catch(() => {});
   flash(req, 'ok', res.locals.t('saved'));
   res.redirect('/sahay/' + s._id);
 });

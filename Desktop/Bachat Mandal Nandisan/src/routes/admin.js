@@ -3,6 +3,9 @@ const bcrypt = require('bcryptjs');
 const { Settings, Year, Group, Member, User, Contribution, Loan, Ledger, Audit } = require('../models');
 const calc = require('../lib/calc');
 const { requireAdmin, flash, audit } = require('../lib/auth');
+const push = require('../lib/push');
+const { monthLabel } = require('../lib/i18n');
+const rs = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
 
 router.use(requireAdmin);
 
@@ -33,7 +36,10 @@ router.get('/', async (req, res) => {
     const f = byFam.get(k); f.items.push(p); f.amount += p.amount; f.fine += p.fine;
   }
   const pendingFamilies = [...byFam.values()].sort((a, b) => (a.group?.order || 0) - (b.group?.order || 0));
-  res.render('admin/index', { year, totals, pending, pendingFamilies, counts, lastMonth, paidLast, overdue });
+  const { PayClaim } = require('../models');
+  const claims = await PayClaim.find({ status: 'pending' }).populate('group').populate('items.member').sort({ createdAt: 1 });
+  const lqCount = await require('../models').LoanRequest.countDocuments({ status: 'waiting' });
+  res.render('admin/index', { lqCount, claims, year, totals, pending, pendingFamilies, counts, lastMonth, paidLast, overdue });
 });
 
 // ---------------- Groups & members ----------------
@@ -192,15 +198,9 @@ router.post('/collections', async (req, res) => {
   if (!Array.isArray(ids)) ids = [ids];
   const bulkDate = calc.parseDate(req.body.paidOn);
   const noLate = req.body.noLateFee === 'on';
-  let n = 0;
-  for (const id of ids) {
-    const paidOn = req.body['date_' + id] ? calc.parseDate(req.body['date_' + id]) : bulkDate;
-    const lateFee = noLate ? 0 : calc.lateFeeFor(settings.monthlyAmount, month, paidOn, settings);
-    try {
-      await Contribution.create({ year: year._id, member: id, month, amount: settings.monthlyAmount, paidOn, lateFee, recordedBy: req.session.user._id });
-      n++;
-    } catch (e) { if (e.code !== 11000) throw e; }
-  }
+  const items = ids.map((id) => ({ member: id, month, paidOn: req.body['date_' + id] ? calc.parseDate(req.body['date_' + id]) : bulkDate, noLate }));
+  const created = await require('../lib/payments').record(year, settings, items, req.session.user._id);
+  const n = created.length;
   await audit(req, 'collection.add', `${month}: ${n} payments`);
   flash(req, 'ok', `${res.locals.t('saved')} (${n})`);
   res.redirect('/admin/collections?month=' + month);
@@ -226,12 +226,7 @@ router.post('/contributions/:id/delete', async (req, res) => {
 });
 
 // ---------------- Loans (private) ----------------
-async function busyGuarantors(excludeLoanId) {
-  const q = { status: 'active' };
-  if (excludeLoanId) q._id = { $ne: excludeLoanId };
-  const loans = await Loan.find(q, 'guarantors');
-  return new Set(loans.flatMap((l) => l.guarantors.map(String)));
-}
+const { busyGuarantors } = require('../lib/loans');
 
 router.get('/loans', async (req, res) => {
   const settings = res.locals.settings;
@@ -241,7 +236,8 @@ router.get('/loans', async (req, res) => {
   const members = await Member.find({ status: 'active' }).sort({ srNo: 1 });
   const busy = await busyGuarantors();
   const totals = await calc.yearTotals(year);
-  res.render('admin/loans', { rows, members, busy, totals, today: calc.todayIST() });
+  const lq = await require('./loanqueue').queue();
+  res.render('admin/loans', { lq, rows, members, busy, totals, today: calc.todayIST() });
 });
 
 router.post('/loans', async (req, res) => {
@@ -250,24 +246,13 @@ router.post('/loans', async (req, res) => {
   const year = await calc.getCurrentYear(settings);
   const { borrower, g1, g2, reason } = req.body;
   const amount = num(req.body.amount);
-  const fail = (msg) => { flash(req, 'err', msg); res.redirect('/admin/loans#new'); };
+  const r = await require('../lib/loans').create({ borrower, g1, g2, amount, reason, date: calc.parseDate(req.body.date), rate: num(req.body.rate, settings.interestRate), ratePeriod: req.body.ratePeriod }, settings, year);
+  if (r.err) { flash(req, 'err', t(r.err.key, r.err.vars)); return res.redirect('/admin/loans#new'); }
+  const loan = r.loan;
   const b = await Member.findById(borrower);
-  if (!b || b.status !== 'active' || amount <= 0) return fail(t('err_inactive'));
-  if (!g1 || !g2 || g1 === g2 || g1 === borrower || g2 === borrower) return fail(t('err_twoGuarantors'));
-  const busy = await busyGuarantors();
-  for (const g of [g1, g2]) if (busy.has(g)) return fail(t('err_guarantorBusy', { n: mlabel(await Member.findById(g)) }));
-  const existing = await Loan.find({ borrower, status: 'active' });
-  const already = existing.reduce((a, l) => a + calc.loanState(l).principal, 0);
-  if (already + amount > settings.maxLoan) return fail(t('err_maxLoan', { n: settings.maxLoan.toLocaleString('en-IN') }));
   const totals = await calc.yearTotals(year);
-  const loan = await Loan.create({
-    year: year._id, borrower, guarantors: [g1, g2], amount,
-    date: calc.parseDate(req.body.date), reason,
-    rate: num(req.body.rate, settings.interestRate),
-    ratePeriod: ['monthly', 'yearly'].includes(req.body.ratePeriod) ? req.body.ratePeriod : settings.interestPeriod,
-  });
   await audit(req, 'loan.create', `${b.name} ₹${amount}`);
-  flash(req, amount > totals.cash ? 'warn' : 'ok', amount > totals.cash ? t('warn_cash') : t('saved'));
+  flash(req, totals.cash < 0 ? 'warn' : 'ok', totals.cash < 0 ? t('warn_cash') : t('saved')); // cash already includes this loan
   res.redirect('/admin/loans/' + loan._id);
 });
 
@@ -286,6 +271,9 @@ router.post('/loans/:id/repay', async (req, res) => {
   if (st.principal <= 0 && st.interestDue <= 0.5) { loan.status = 'closed'; loan.closedOn = calc.parseDate(req.body.date); }
   await loan.save();
   await audit(req, 'loan.repay', `${mlabel(loan.borrower)} ₹${amount}`);
+  // Private: only the borrower's family is told
+  const after = calc.loanState(loan);
+  await push.toGroups([loan.borrower.group], (t) => ({ title: t('pushRepayTitle'), body: t('pushRepayBody', { a: rs(amount), b: rs(after.totalDue) }), url: '/', tag: 'loan' })).catch(() => {});
   flash(req, 'ok', res.locals.t('saved'));
   res.redirect('/admin/loans/' + loan._id);
 });
@@ -388,6 +376,31 @@ router.post('/users/:id/toggle', async (req, res) => {
   res.redirect('/admin/users');
 });
 
+// ---------------- Rule book (editable) ----------------
+const ORIGINAL_RULES = require('../lib/rules');
+router.get('/rules', (req, res) => {
+  const s = res.locals.settings;
+  res.render('admin/rules', { rules: s.rules && s.rules.length ? s.rules : ORIGINAL_RULES });
+});
+router.post('/rules', async (req, res) => {
+  const arr = (v) => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
+  const gu = arr(req.body.gu), en = arr(req.body.en);
+  const rules = gu.map((g, i) => ({ gu: String(g || '').trim(), en: String(en[i] || '').trim() })).filter((r) => r.gu || r.en);
+  if (!rules.length) { flash(req, 'err', res.locals.t('rulesEmpty')); return res.redirect('/admin/rules'); }
+  const s = await calc.getSettings();
+  s.rules = rules; s.rulesUpdatedAt = new Date(); await s.save();
+  await audit(req, 'rules.update', `${rules.length} rules`);
+  flash(req, 'ok', res.locals.t('rulesSaved'));
+  res.redirect('/rules');
+});
+router.post('/rules/reset', async (req, res) => {
+  const s = await calc.getSettings();
+  s.rules = []; s.rulesUpdatedAt = new Date(); await s.save();
+  await audit(req, 'rules.reset', 'original printed rules restored');
+  flash(req, 'ok', res.locals.t('rulesSaved'));
+  res.redirect('/rules');
+});
+
 // ---------------- Settings & permissions ----------------
 router.get('/settings', (req, res) => res.render('admin/settings'));
 router.post('/settings', async (req, res) => {
@@ -397,6 +410,13 @@ router.post('/settings', async (req, res) => {
   s.mandalName = b.mandalName || s.mandalName;
   s.mandalNameGu = b.mandalNameGu || s.mandalNameGu;
   s.samajName = b.samajName || s.samajName;
+  const upiLib = require('../lib/upi');
+  const mid = String(b.mandalUpiId || '').trim();
+  if (!mid || upiLib.valid(mid)) s.mandalUpiId = mid || undefined;
+  s.mandalUpiName = String(b.mandalUpiName || '').trim() || undefined;
+  const mqr = upiLib.cleanQr(b.mandalUpiQr);
+  if (mqr) s.mandalUpiQr = mqr;
+  if (b.removeMandalQr === 'on') s.mandalUpiQr = undefined;
   s.samajNameGu = b.samajNameGu || s.samajNameGu;
   s.monthlyAmount = num(b.monthlyAmount, s.monthlyAmount);
   s.dueDay = Math.min(28, Math.max(1, num(b.dueDay, s.dueDay)));
@@ -488,6 +508,7 @@ router.post('/year/close', async (req, res) => {
   }
   summary.adjusted = adjusted;
   year.summary = summary; year.markModified('summary'); await year.save();
+  await require('./money').createPayouts(year); // one payout slip per family
   await audit(req, 'year.close', `${year.label} → ${ny.label}, first month adjusted for ${adjusted} members`);
   flash(req, 'ok', res.locals.t('yearClosed'));
   res.redirect('/admin/year');
@@ -505,4 +526,30 @@ router.get('/audit', async (req, res) => {
   res.render('admin/audit', { logs });
 });
 
+// Reopen the most recently closed year (undo an accidental close).
+// Allowed only while the new year has nothing in it except the automatic first-month deductions.
+router.post('/year/reopen', async (req, res) => {
+  const { t } = res.locals;
+  const { Payout, PayClaim, LoanRequest } = require('../models');
+  const settings = await calc.getSettings();
+  const cur = await calc.getCurrentYear(settings);
+  const last = await Year.findOne({ status: 'closed' }).sort({ closedAt: -1 });
+  if (!last || req.body.confirm !== 'REOPEN') { flash(req, 'err', t('reopenTypeConfirm')); return res.redirect('/admin/year'); }
+  const AUTO = /adjusted from year-end payout/;
+  const contribs = await Contribution.find({ year: cur._id });
+  const manual = contribs.filter((c) => !AUTO.test(c.note || '')).length;
+  const other = (await Loan.countDocuments({ year: cur._id })) + (await Ledger.countDocuments({ year: cur._id })) + (await PayClaim.countDocuments({ year: cur._id }));
+  const paidOut = await Payout.countDocuments({ year: last._id, status: { $ne: 'pending' } });
+  if (manual || other || paidOut) { flash(req, 'err', t('reopenBlocked', { a: manual, b: other, c: paidOut })); return res.redirect('/admin/year'); }
+  await Contribution.deleteMany({ year: cur._id });
+  await Payout.deleteMany({ year: last._id });
+  await Year.deleteOne({ _id: cur._id });
+  last.status = 'open'; last.closedAt = undefined; last.summary = undefined; await last.save();
+  settings.currentYear = last._id; await settings.save();
+  await audit(req, 'year.reopen', `${last.label} reopened, ${cur.label} removed`);
+  flash(req, 'ok', t('yearReopened', { y: last.label }));
+  res.redirect('/admin/year');
+});
+
 module.exports = router;
+module.exports.yearSummary = yearSummary;
