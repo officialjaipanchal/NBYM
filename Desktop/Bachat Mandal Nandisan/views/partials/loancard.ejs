@@ -9,6 +9,7 @@
     <span><%= t('totalDue') %></span><b><%= money(st.totalDue) %></b>
     <span><%= t('guarantors') %></span><b><%= loan.guarantors.map(mname).join(', ') %></b>
   </div>
+  <% if (loan.disbursedOn) { %><div class="small txt-ok">✓ <%= t('loanSentOn', { d: dl(loan.disbursedOn), m: loan.disbursedMethod === 'cash' ? t('cash') : 'UPI' }) %></div><% } %>
   <% if (st.overdue) { %><div class="flash err small"><%= t('overdue') %></div><% } %>
   <% if (st.rows.length) { %>
   <details><summary><%= t('repayments') %> (<%= st.rows.length %>)</summary>

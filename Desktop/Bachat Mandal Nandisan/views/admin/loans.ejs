@@ -18,7 +18,7 @@
   <tr class="<%= st.overdue ? 'badrow' : '' %> <%= l.status === 'closed' ? 'dim' : '' %>">
     <td><a href="/admin/loans/<%= l._id %>"><b><%= mname(l.borrower) %></b></a></td><td><%= dl(l.date) %></td><td><%= money(l.amount) %></td>
     <td><%= money(st.principal) %></td><td><%= money(st.interestDue) %></td><td class="small"><%= l.guarantors.map(mname).join(', ') %></td>
-    <td><span class="tag <%= l.status %>"><%= t(l.status) %></span><% if (st.overdue) { %> <span class="tag no">⚠</span><% } %></td>
+    <td><span class="tag <%= l.status %>"><%= t(l.status) %></span><% if (l.status === 'active' && !l.disbursedOn) { %> <span class="tag head" title="<%= t('notSentYet') %>">💸</span><% } %><% if (st.overdue) { %> <span class="tag no">⚠</span><% } %></td>
   </tr>
   <% }) %>
 </table></div>

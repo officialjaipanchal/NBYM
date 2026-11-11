@@ -11,6 +11,29 @@
   </div>
 </div>
 <% if (st.overdue) { %><div class="flash err"><%= t('overdue') %></div><% } %>
+<% if (loan.status === 'active' && !loan.disbursedOn) { %>
+<div class="card sendc" id="send">
+  <div class="cardhead"><div><h3>💸 <%= t('sendLoanTitle', { a: money(loan.amount) }) %></h3><p class="muted small"><%= t('sendLoanHelp') %></p></div></div>
+  <div class="paybox">
+    <div class="pb-main">
+      <b><%= mname(loan.borrower) %><%= g.upiName ? ' · ' + g.upiName : '' %></b>
+      <% if (g.upiId) { %><div class="small"><code class="copy" data-copy="<%= g.upiId %>"><%= g.upiId %></code> <span class="muted">(<%= t('tapToCopy') %>)</span></div><% } %>
+      <% if (payLink) { %><a class="btn upi" href="<%= payLink %>"><%= t('payByUpi', { a: money(loan.amount) }) %></a>
+      <% } else if (!g.upiQr) { %><div class="flash warn small"><%= t('noUpiBorrower') %><% if (g.mobile) { %> <a href="tel:<%= g.mobile %>">📞 <%= g.mobile %></a><% } %></div><% } %>
+    </div>
+    <% if (g.upiQr) { %><img class="qr" src="<%= g.upiQr %>" alt="UPI QR"><% } %>
+  </div>
+  <form method="post" action="/admin/loans/<%= loan._id %>/disbursed" class="stack three">
+    <label><%= t('date') %><input type="date" name="date" value="<%= di(today) %>"></label>
+    <label><%= t('method') %><select name="method"><option value="upi">UPI</option><option value="cash"><%= t('cash') %></option></select></label>
+    <label><%= t('upiRef') %><input name="ref" placeholder="<%= t('optional') %>"></label>
+    <div class="formactions"><button class="btn">✓ <%= t('markLoanSent') %></button></div>
+  </form>
+</div>
+<% } else if (loan.disbursedOn) { %>
+<div class="flash small">✓ <%= t('loanSentOn', { d: dl(loan.disbursedOn), m: loan.disbursedMethod === 'cash' ? t('cash') : 'UPI' }) %><%= loan.disbursedRef ? ' · ' + loan.disbursedRef : '' %>
+  <form method="post" action="/admin/loans/<%= loan._id %>/disbursed/undo" class="inline" data-confirm="<%= t('undo') %>?"><button class="link small"><%= t('undo') %></button></form></div>
+<% } %>
 <div class="split">
   <div class="card">
     <h3><%= t('details') %></h3>

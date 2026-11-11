@@ -448,3 +448,4 @@ details.pop.wide .popbody { left: 0; right: auto; }
 .q-act details.pop .popbody { right: 0; }
 .txt-ok { color: var(--leaf); }
 @media (max-width: 640px) { .q-act { width: 100%; justify-content: flex-end; } }
+.sendc { border-color: #bfe0cb; }

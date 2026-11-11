@@ -257,9 +257,29 @@ router.post('/loans', async (req, res) => {
 });
 
 router.get('/loans/:id', async (req, res) => {
-  const loan = await Loan.findById(req.params.id).populate('borrower guarantors');
+  const loan = await Loan.findById(req.params.id).populate({ path: 'borrower', populate: { path: 'group' } }).populate('guarantors');
   if (!loan) return res.redirect('/admin/loans');
-  res.render('admin/loan', { loan, st: calc.loanState(loan), today: calc.todayIST() });
+  const g = loan.borrower?.group || {};
+  const payLink = require('../lib/upi').link(g.upiId, g.upiName || g.name, loan.amount, 'NBYM loan');
+  res.render('admin/loan', { loan, g, payLink, st: calc.loanState(loan), today: calc.todayIST() });
+});
+
+// Record that the loan money was handed over (UPI / cash) and tell the borrower's family
+router.post('/loans/:id/disbursed', async (req, res) => {
+  const loan = await Loan.findById(req.params.id).populate('borrower');
+  if (loan && !loan.disbursedOn) {
+    loan.disbursedOn = calc.parseDate(req.body.date); loan.disbursedMethod = req.body.method === 'cash' ? 'cash' : 'upi'; loan.disbursedRef = String(req.body.ref || '').slice(0, 40);
+    await loan.save();
+    await audit(req, 'loan.disbursed', `${mlabel(loan.borrower)} ₹${loan.amount} ${loan.disbursedMethod} ${loan.disbursedRef}`);
+    await push.toGroups([loan.borrower.group], (t) => ({ title: t('pushDisbTitle'), body: t('pushDisbBody', { a: rs(loan.amount) }), url: '/#myloans', tag: 'loan' })).catch(() => {});
+    flash(req, 'ok', res.locals.t('saved'));
+  }
+  res.redirect('/admin/loans/' + req.params.id);
+});
+router.post('/loans/:id/disbursed/undo', async (req, res) => {
+  const loan = await Loan.findById(req.params.id).populate('borrower');
+  if (loan) { loan.disbursedOn = loan.disbursedMethod = loan.disbursedRef = undefined; await loan.save(); await audit(req, 'loan.disbursed.undo', mlabel(loan.borrower)); }
+  res.redirect('/admin/loans/' + req.params.id);
 });
 
 router.post('/loans/:id/repay', async (req, res) => {

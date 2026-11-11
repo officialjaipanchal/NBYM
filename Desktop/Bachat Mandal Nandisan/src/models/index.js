@@ -116,6 +116,7 @@ const LoanSchema = new Schema({
   reason: String,
   status: { type: String, enum: ['active', 'closed'], default: 'active' },
   closedOn: Date,
+  disbursedOn: Date, disbursedMethod: String, disbursedRef: String, // when the admin handed over the loan money
   repayments: [RepaymentSchema],
 }, { timestamps: true });
 
